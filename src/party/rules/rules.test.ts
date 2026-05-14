@@ -236,24 +236,23 @@ describe("points", () => {
 
 // ---- transitions ----
 describe("transitions", () => {
-  it("single_chance clears buzzes and goes to waiting", () => {
+  it("single_chance clears buzzes and saves lastBuzzes", () => {
     const state = makeRoom({ answerTransition: "single_chance" });
     state.buzzes = [{ playerId: "p1", buzzedAt: 1 }];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([]);
     expect(state.lastBuzzes).toEqual([{ playerId: "p1", buzzedAt: 1 }]);
-    expect(state.phase).toBe("waiting");
   });
 
-  it("endless_chance clears buzzes and goes to question", () => {
+  it("endless_chance clears buzzes and saves lastBuzzes", () => {
     const state = makeRoom({ answerTransition: "endless_chance" });
     state.buzzes = [{ playerId: "p1", buzzedAt: 1 }];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([]);
-    expect(state.phase).toBe("question");
+    expect(state.lastBuzzes).toEqual([{ playerId: "p1", buzzedAt: 1 }]);
   });
 
-  it("second_chance with remaining buzzes stays buzzed", () => {
+  it("second_chance with remaining buzzes shifts buzzes", () => {
     const state = makeRoom({ answerTransition: "second_chance" });
     state.buzzes = [
       { playerId: "p1", buzzedAt: 1 },
@@ -261,19 +260,17 @@ describe("transitions", () => {
     ];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([{ playerId: "p2", buzzedAt: 2 }]);
-    expect(state.phase).toBe("buzzed");
   });
 
-  it("second_chance with no remaining buzzes goes to waiting", () => {
+  it("second_chance with no remaining buzzes clears lastBuzzes", () => {
     const state = makeRoom({ answerTransition: "second_chance" });
     state.buzzes = [{ playerId: "p1", buzzedAt: 1 }];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([]);
     expect(state.lastBuzzes).toEqual([]);
-    expect(state.phase).toBe("waiting");
   });
 
-  it("all_order with remaining buzzes stays buzzed", () => {
+  it("all_order with remaining buzzes shifts buzzes", () => {
     const state = makeRoom({ answerTransition: "all_order" });
     state.buzzes = [
       { playerId: "p1", buzzedAt: 1 },
@@ -281,16 +278,14 @@ describe("transitions", () => {
     ];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([{ playerId: "p2", buzzedAt: 2 }]);
-    expect(state.phase).toBe("buzzed");
   });
 
-  it("all_order with no remaining buzzes goes to question", () => {
+  it("all_order with no remaining buzzes clears lastBuzzes", () => {
     const state = makeRoom({ answerTransition: "all_order" });
     state.buzzes = [{ playerId: "p1", buzzedAt: 1 }];
     applyTransitionOnIncorrect(state);
     expect(state.buzzes).toEqual([]);
     expect(state.lastBuzzes).toEqual([]);
-    expect(state.phase).toBe("question");
   });
 });
 

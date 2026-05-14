@@ -66,7 +66,6 @@ export const quizRoomMachine = setup({
       return event.playerId === context.hostId;
     },
     canBuzz: ({ context, event }) => {
-      if (event.type !== "BUZZ") return false;
       if (context.phase !== "question" && context.phase !== "buzzed")
         return false;
       const player = context.players[event.playerId];
@@ -242,7 +241,7 @@ export const quizRoomMachine = setup({
     setTotalQuestions: assign(({ context, event }) => {
       if (event.type !== "SET_TOTAL_QUESTIONS") return context;
       const next = structuredClone(context);
-      next.totalQuestions = event.total;
+      next.totalQuestions = clampInteger(event.total, 0, 999);
       return next;
     }),
     setRule: assign(({ context, event }) => {
@@ -292,15 +291,9 @@ export const quizRoomMachine = setup({
       state: getRoomState(context),
     })),
     emitBuzzAccepted: emit(({ context, event }) => {
-      if (event.type !== "BUZZ") {
-        return {
-          type: "errorOccurred" as const,
-          playerId: event.playerId,
-          message: "",
-        };
-      }
+      const _event = event as Extract<QuizEvent, { type: "BUZZ" }>;
       const entry = context.buzzes[context.buzzes.length - 1];
-      const playerName = context.players[event.playerId]?.name ?? "";
+      const playerName = context.players[_event.playerId]?.name ?? "";
       return {
         type: "buzzAccepted" as const,
         entry,
@@ -308,18 +301,12 @@ export const quizRoomMachine = setup({
       };
     }),
     emitJudgeResult: emit(({ context, event }) => {
-      if (event.type !== "JUDGE") {
-        return {
-          type: "errorOccurred" as const,
-          playerId: event.playerId,
-          message: "",
-        };
-      }
+      const _event = event as Extract<QuizEvent, { type: "JUDGE" }>;
       const firstId = getFirstBuzzPlayerId(context);
-      const answererId = firstId ?? event.playerId;
+      const answererId = firstId ?? _event.playerId;
       return {
         type: "judgeResult" as const,
-        correct: event.correct,
+        correct: _event.correct,
         playerId: answererId,
         scores: Object.fromEntries(
           Object.entries(context.players).map(([id, p]) => [id, p.score]),
