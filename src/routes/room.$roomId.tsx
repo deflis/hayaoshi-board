@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import usePartySocket from "partysocket/react";
 import { type FormEvent, useCallback, useState } from "react";
+import { BoardPanel } from "../components/room/BoardPanel";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
 import { FinishedPhase } from "../components/room/FinishedPhase";
@@ -125,6 +126,11 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
           <HostRoleControls
             state={roomState}
             isHost={isHost}
+            myPlayerId={myPlayerId}
+            send={sendMessage}
+          />
+          <BoardPanel
+            state={roomState}
             myPlayerId={myPlayerId}
             send={sendMessage}
           />
