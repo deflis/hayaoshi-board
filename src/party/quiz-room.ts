@@ -43,7 +43,9 @@ export class QuizRoom extends Server<Env> {
 		await this.handleMessage(connection, msg, state);
 	}
 
-	async onClose(_connection: Connection<ConnectionSession>) {}
+	async onClose(connection: Connection<ConnectionSession>) {
+		await this.releaseHostForDisconnectedConnection(connection);
+	}
 
 	private initialState(): RoomState {
 		return {
@@ -206,6 +208,35 @@ export class QuizRoom extends Server<Env> {
 			state.phase === "waiting" ||
 			state.phase === "result" ||
 			state.phase === "finished"
+		);
+	}
+
+	private hasOtherConnectionForPlayer(
+		closedConnection: Connection<ConnectionSession>,
+		playerId: PlayerId,
+	): boolean {
+		for (const connection of this.getConnections<ConnectionSession>()) {
+			if (connection.id === closedConnection.id) continue;
+			if (connection.state?.playerId === playerId) return true;
+		}
+		return false;
+	}
+
+	private async releaseHostForDisconnectedConnection(
+		connection: Connection<ConnectionSession>,
+	): Promise<void> {
+		const playerId = this.getPlayerId(connection);
+		if (!playerId) return;
+		if (this.hasOtherConnectionForPlayer(connection, playerId)) return;
+
+		const state = await this.getState();
+		if (state.hostId !== playerId) return;
+
+		state.hostId = null;
+		this.syncPlayerRoles(state);
+		await this.saveState(state);
+		this.broadcast(
+			JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
 		);
 	}
 
