@@ -468,13 +468,6 @@ export class QuizRoom extends Server<Env> {
         const playerId = this.getPlayerId(connection);
         if (!playerId || !state.players[playerId]) return;
         if (state.hostId) return;
-        if (!this.canChangeHost(state)) {
-          this.send(connection, {
-            type: "error",
-            message: "問題中はホストになれません。",
-          });
-          return;
-        }
 
         state.hostId = playerId;
         this.syncPlayerRoles(state);

@@ -18,9 +18,10 @@ function canChangeHost(state: RoomState): boolean {
 }
 
 export function HostRoleControls({ state, isHost, myPlayerId, send }: Props) {
-  if (!myPlayerId || !canChangeHost(state)) return null;
+  if (!myPlayerId) return null;
 
   if (isHost) {
+    if (!canChangeHost(state)) return null;
     return (
       <section className="bg-gray-800 rounded-xl p-4">
         <button
