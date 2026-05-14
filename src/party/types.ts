@@ -64,6 +64,7 @@ export type ClientMessage =
   | { type: "start_question" }
   | { type: "buzz" }
   | { type: "judge"; correct: boolean }
+  | { type: "through" }
   | { type: "next_question" }
   | { type: "finish_game" }
   | { type: "start_game" }

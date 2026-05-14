@@ -190,7 +190,15 @@ export function HostControls({ state, send }: Props) {
       )}
 
       {phase === "question" && (
-        <p className="text-gray-400 text-sm text-center">早押し待ち中...</p>
+        <div className="space-y-2">
+          <p className="text-gray-400 text-sm text-center">早押し待ち中...</p>
+          <button type="button"
+            onClick={() => send({ type: "through" })}
+            className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            スルー
+          </button>
+        </div>
       )}
 
       {phase === "buzzed" && currentAnswerer && (
@@ -218,6 +226,12 @@ export function HostControls({ state, send }: Props) {
                   currentAnswerer.incorrectCount + 1 >= state.eliminateCount ? "（失格）" : ""
                 }`
               : "不正解"}
+          </button>
+          <button type="button"
+            onClick={() => send({ type: "through" })}
+            className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            スルー
           </button>
         </div>
       )}

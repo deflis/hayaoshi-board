@@ -321,6 +321,17 @@ export class QuizRoom extends Server<Env> {
         break;
       }
 
+      case "through": {
+        if (connection.id !== state.hostId) return;
+        if (state.phase !== "question" && state.phase !== "buzzed") return;
+        state.lastBuzzes = [...state.buzzes];
+        state.buzzes = [];
+        state.phase = "waiting";
+        await this.saveState(state);
+        this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
+        break;
+      }
+
       case "next_question": {
         if (connection.id !== state.hostId) return;
         state.lastBuzzes = [...state.buzzes];
