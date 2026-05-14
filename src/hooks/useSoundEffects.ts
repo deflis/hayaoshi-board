@@ -1,11 +1,11 @@
 import { useCallback, useRef } from "react";
-import type { ServerMessage } from "../party/types";
 
 // Vite が静的アセットを正しく解決できるよう import で URL を取得する
 import buzzerSound from "../assets/quiz-buzzer-1.mp3";
 import correctSound from "../assets/quiz-correct-1.mp3";
 import incorrectSound from "../assets/quiz-incorrect-1.mp3";
 import questionSound from "../assets/quiz-question-1.mp3";
+import type { ServerMessage } from "../party/types";
 
 /**
  * Audio インスタンスをあらかじめ生成し、再生時に cloneNode で使い回す。
