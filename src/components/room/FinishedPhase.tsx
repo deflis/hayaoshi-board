@@ -9,9 +9,10 @@ interface Props {
 
 export function FinishedPhase({ players, state, isHost, send }: Props) {
   const isMonBatsu = state.ruleType !== "simple" && state.ruleType !== "points";
-  const hasActivePlayer = Object.values(state.players).some(
-    (p) => !p.hasWon && !p.isEliminated,
-  );
+  const winners = Object.values(state.players).filter((p) => p.hasWon);
+  const hasActivePlayer =
+    (state.maxWinners === 0 || winners.length < state.maxWinners) &&
+    Object.values(state.players).some((p) => !p.hasWon && !p.isEliminated);
 
   const sorted = [...players].sort((a, b) => {
     if (a.hasWon !== b.hasWon) return a.hasWon ? -1 : 1;

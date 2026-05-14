@@ -108,8 +108,14 @@ export const quizRoomMachine = setup({
       );
     },
     hasHost: ({ context }) => !!context.hostId,
-    hasActivePlayer: ({ context }) =>
-      Object.values(context.players).some((p) => !p.hasWon && !p.isEliminated),
+    hasActivePlayer: ({ context }) => {
+      const winners = Object.values(context.players).filter((p) => p.hasWon);
+      if (context.maxWinners > 0 && winners.length >= context.maxWinners)
+        return false;
+      return Object.values(context.players).some(
+        (p) => !p.hasWon && !p.isEliminated,
+      );
+    },
     isHostDisconnected: ({ context, event }) => {
       return (
         event.type === "HOST_DISCONNECTED" && event.playerId === context.hostId
@@ -270,6 +276,8 @@ export const quizRoomMachine = setup({
         next.eliminatePoints = event.eliminatePoints ?? null;
       if (event.nonBuzzerPoints != null)
         next.nonBuzzerPoints = event.nonBuzzerPoints;
+      if (event.maxWinners != null)
+        next.maxWinners = clampInteger(event.maxWinners, 0, 99);
       return next;
     }),
     setPlayerStats: assign(({ context, event }) => {

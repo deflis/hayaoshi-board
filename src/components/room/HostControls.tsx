@@ -233,6 +233,20 @@ export function HostControls({ state, send }: Props) {
             ))}
           </div>
           <RuleSettings state={state} send={send} />
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            勝者数上限
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={state.maxWinners}
+              onChange={(e) =>
+                send({ type: "set_rule", maxWinners: Number(e.target.value) })
+              }
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1"
+            />
+            <span className="text-gray-500">（0=制限なし）</span>
+          </label>
           <select
             value={state.answerTransition}
             onChange={(e) =>
@@ -273,6 +287,20 @@ export function HostControls({ state, send }: Props) {
               <span>ルール: {RULE_LABELS[state.ruleType]}</span>
             )}
           </p>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            勝者数上限
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={state.maxWinners}
+              onChange={(e) =>
+                send({ type: "set_rule", maxWinners: Number(e.target.value) })
+              }
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1"
+            />
+            <span className="text-gray-500">（0=制限なし）</span>
+          </label>
           <button
             type="button"
             onClick={() => {

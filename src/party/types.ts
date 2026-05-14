@@ -60,6 +60,8 @@ export interface RoomState {
   eliminateCount: number; // m○n×: 失格誤答数 / m○n休: 何問休み
   // NbyN
   nbyN: number;
+  // 勝者数上限（0 = 制限なし）
+  maxWinners: number;
   // +N/-M
   addPoints: number;
   subtractPoints: number;
@@ -102,6 +104,7 @@ export type ClientMessage = (
       winPoints?: number;
       eliminatePoints?: number | null;
       nonBuzzerPoints?: number;
+      maxWinners?: number;
     }
 ) & { sessionId?: PlayerId };
 
@@ -157,6 +160,7 @@ export type QuizEvent =
       winPoints?: number;
       eliminatePoints?: number | null;
       nonBuzzerPoints?: number;
+      maxWinners?: number;
     }
   | { type: "HOST_DISCONNECTED"; playerId: PlayerId };
 

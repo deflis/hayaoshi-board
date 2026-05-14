@@ -23,6 +23,7 @@ function makeContext(overrides?: Partial<QuizContext>): QuizContext {
     winPoints: 7,
     eliminatePoints: null,
     nonBuzzerPoints: 0,
+    maxWinners: 0,
     ...overrides,
   };
 }
