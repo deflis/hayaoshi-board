@@ -1,6 +1,5 @@
 import type { Connection, WSMessage } from "partyserver";
 import { Server } from "partyserver";
-import * as Y from "yjs";
 import type {
   BuzzEntry,
   ChatMessage,
@@ -11,9 +10,8 @@ import type {
   ServerMessage,
 } from "./types";
 
-const YJS_STATE_UPDATE_KEY = "yjs-state-update";
-const ROOM_STATE_MAP_KEY = "state";
-const CHAT_MESSAGES_ARRAY_KEY = "chatMessages";
+const ROOM_STATE_KEY = "room-state";
+const CHAT_MESSAGES_KEY = "chat-messages";
 const MAX_CHAT_MESSAGES = 100;
 const MAX_CHAT_TEXT_LENGTH = 300;
 const EMPTY_ROOM_CLEANUP_DELAY_MS = 5 * 60 * 1000;
@@ -100,70 +98,35 @@ export class QuizRoom extends Server<Env> {
     return s;
   }
 
-  private async loadYDoc(): Promise<Y.Doc> {
-    const doc = new Y.Doc();
-    const storedUpdate =
-      await this.ctx.storage.get<number[]>(YJS_STATE_UPDATE_KEY);
-
-    if (storedUpdate) {
-      Y.applyUpdate(doc, Uint8Array.from(storedUpdate));
-      return doc;
-    }
-
-    return doc;
-  }
-
-  private getChatMessages(doc: Y.Doc): ChatMessage[] {
-    return doc
-      .getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY)
-      .toArray()
-      .slice(-MAX_CHAT_MESSAGES);
-  }
-
-  private async saveYDoc(doc: Y.Doc) {
-    await this.ctx.storage.put(
-      YJS_STATE_UPDATE_KEY,
-      Array.from(Y.encodeStateAsUpdate(doc)),
-    );
-  }
-
   private async getState(): Promise<RoomState> {
-    const doc = await this.loadYDoc();
-    const state = doc.getMap(ROOM_STATE_MAP_KEY).get(ROOM_STATE_MAP_KEY) as
-      | Partial<RoomState>
-      | undefined;
-    const normalized = this.normalizeState(state);
-    normalized.chatMessages = this.getChatMessages(doc);
+    const [stored, chatMessages] = await Promise.all([
+      this.ctx.storage.get<Partial<RoomState>>(ROOM_STATE_KEY),
+      this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
+    ]);
+    const normalized = this.normalizeState(stored);
+    normalized.chatMessages = chatMessages ?? [];
     return normalized;
   }
 
   private async saveState(state: RoomState) {
-    const doc = await this.loadYDoc();
     const { chatMessages: _chatMessages, ...stateWithoutChatMessages } =
       this.normalizeState(state);
-    doc
-      .getMap(ROOM_STATE_MAP_KEY)
-      .set(ROOM_STATE_MAP_KEY, stateWithoutChatMessages);
-    await this.saveYDoc(doc);
+    await this.ctx.storage.put(ROOM_STATE_KEY, stateWithoutChatMessages);
   }
 
   private async appendChatMessage(
     chatMessage: ChatMessage,
   ): Promise<RoomState> {
-    const doc = await this.loadYDoc();
-    const messages = doc.getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY);
-    messages.push([chatMessage]);
-    const overflow = messages.length - MAX_CHAT_MESSAGES;
-    if (overflow > 0) {
-      messages.delete(0, overflow);
-    }
-    await this.saveYDoc(doc);
-
-    const state = doc.getMap(ROOM_STATE_MAP_KEY).get(ROOM_STATE_MAP_KEY) as
-      | Partial<RoomState>
-      | undefined;
-    const normalized = this.normalizeState(state);
-    normalized.chatMessages = this.getChatMessages(doc);
+    const [stored, existing] = await Promise.all([
+      this.ctx.storage.get<Partial<RoomState>>(ROOM_STATE_KEY),
+      this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
+    ]);
+    const messages = [...(existing ?? []), chatMessage].slice(
+      -MAX_CHAT_MESSAGES,
+    );
+    await this.ctx.storage.put(CHAT_MESSAGES_KEY, messages);
+    const normalized = this.normalizeState(stored);
+    normalized.chatMessages = messages;
     return normalized;
   }
 
