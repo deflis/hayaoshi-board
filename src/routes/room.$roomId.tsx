@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Volume2, VolumeX } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
@@ -12,6 +13,7 @@ import { Scoreboard } from "../components/room/Scoreboard";
 import { WaitingRoom } from "../components/room/WaitingRoom";
 import { useQuizRoom } from "../hooks/useQuizRoom";
 import { useSoundEffects } from "../hooks/useSoundEffects";
+import { useUserSettings } from "../stores/userSettings";
 
 export const Route = createFileRoute("/room/$roomId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -32,6 +34,8 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
   const onServerMessage = useSoundEffects();
   const { roomState, sendMessage, myPlayerId, isHost, errorMessage } =
     useQuizRoom(roomId, name, onServerMessage);
+  const soundEnabled = useUserSettings((s) => s.soundEnabled);
+  const setSoundEnabled = useUserSettings((s) => s.setSoundEnabled);
 
   if (!roomState) {
     return (
@@ -55,6 +59,14 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
             </span>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+          className="text-gray-400 hover:text-white transition-colors"
+          title={soundEnabled ? "効果音OFF" : "効果音ON"}
+        >
+          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 lg:flex-row">

@@ -1,11 +1,11 @@
 import { useCallback, useRef } from "react";
 
-// Vite が静的アセットを正しく解決できるよう import で URL を取得する
 import buzzerSound from "../assets/quiz-buzzer-1.mp3";
 import correctSound from "../assets/quiz-correct-1.mp3";
 import incorrectSound from "../assets/quiz-incorrect-1.mp3";
 import questionSound from "../assets/quiz-question-1.mp3";
 import type { ServerMessage } from "../party/types";
+import { useUserSettings } from "../stores/userSettings";
 
 /**
  * Audio インスタンスをあらかじめ生成し、再生時に cloneNode で使い回す。
@@ -51,29 +51,34 @@ const sounds = {
  */
 export function useSoundEffects() {
   const prevPhaseRef = useRef<string | null>(null);
+  const soundEnabled = useUserSettings((s) => s.soundEnabled);
 
-  const handleMessage = useCallback((msg: ServerMessage) => {
-    if (msg.type === "buzz_accepted") {
-      sounds.buzzer.play();
-    } else if (msg.type === "judge_result") {
-      if (msg.correct) {
-        sounds.correct.play();
-      } else {
-        sounds.incorrect.play();
-      }
-    } else if (msg.type === "game_finished") {
-      sounds.correct.play();
-    } else if (msg.type === "room_state") {
-      const phase = msg.state.phase;
-      const prev = prevPhaseRef.current;
-      if (prev !== phase) {
-        if (phase === "question") {
-          sounds.question.play();
+  const handleMessage = useCallback(
+    (msg: ServerMessage) => {
+      if (!soundEnabled) return;
+      if (msg.type === "buzz_accepted") {
+        sounds.buzzer.play();
+      } else if (msg.type === "judge_result") {
+        if (msg.correct) {
+          sounds.correct.play();
+        } else {
+          sounds.incorrect.play();
         }
+      } else if (msg.type === "game_finished") {
+        sounds.correct.play();
+      } else if (msg.type === "room_state") {
+        const phase = msg.state.phase;
+        const prev = prevPhaseRef.current;
+        if (prev !== phase) {
+          if (phase === "question") {
+            sounds.question.play();
+          }
+        }
+        prevPhaseRef.current = phase;
       }
-      prevPhaseRef.current = phase;
-    }
-  }, []);
+    },
+    [soundEnabled],
+  );
 
   return handleMessage;
 }
