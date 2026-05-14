@@ -517,9 +517,21 @@ export class QuizRoom extends Server<Env> {
 				const playerId = this.getPlayerId(connection);
 				if (playerId !== state.hostId) return;
 				if (state.phase !== "question" && state.phase !== "buzzed") return;
-				state.lastBuzzes = [...state.buzzes];
-				state.buzzes = [];
-				state.phase = "waiting";
+
+				if (state.phase === "buzzed") {
+					state.buzzes = state.buzzes.slice(1);
+					if (state.buzzes.length > 0) {
+						state.phase = "buzzed";
+					} else {
+						state.phase = "waiting";
+					}
+				} else {
+					state.lastBuzzes = [...state.buzzes];
+					state.buzzes = [];
+					state.phase = "question";
+					state.currentQuestionIndex += 1;
+				}
+
 				await this.saveState(state);
 				this.broadcast(
 					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
