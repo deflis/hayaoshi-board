@@ -273,6 +273,17 @@ export function HostControls({ state, send }: Props) {
               <span>ルール: {RULE_LABELS[state.ruleType]}</span>
             )}
           </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("ゲームを終了しますか？スコアは保持されます。")) {
+                send({ type: "finish_game" });
+              }
+            }}
+            className="w-full bg-red-800 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            ゲームを終了する
+          </button>
         </>
       )}
 
