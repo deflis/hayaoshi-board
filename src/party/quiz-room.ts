@@ -3,8 +3,10 @@ import { Server } from "partyserver";
 import * as Y from "yjs";
 import type {
 	BuzzEntry,
+	ChatMessage,
 	ClientMessage,
 	Player,
+	PlayerId,
 	RoomState,
 	ServerMessage,
 } from "./types";
@@ -12,6 +14,13 @@ import type {
 const YJS_STATE_UPDATE_KEY = "yjs-state-update";
 const LEGACY_STATE_KEY = "state";
 const ROOM_STATE_MAP_KEY = "state";
+const CHAT_MESSAGES_ARRAY_KEY = "chatMessages";
+const MAX_CHAT_MESSAGES = 100;
+const MAX_CHAT_TEXT_LENGTH = 300;
+
+interface ConnectionSession {
+	playerId: PlayerId;
+}
 
 export class QuizRoom extends Server<Env> {
 	static options = { hibernate: true };
@@ -20,37 +29,21 @@ export class QuizRoom extends Server<Env> {
 		await this.getState();
 	}
 
-	async onConnect(connection: Connection) {
+	async onConnect(connection: Connection<ConnectionSession>) {
 		const state = await this.getState();
 		this.send(connection, { type: "room_state", state });
 	}
 
-	async onMessage(connection: Connection, message: WSMessage) {
+	async onMessage(
+		connection: Connection<ConnectionSession>,
+		message: WSMessage,
+	) {
 		const msg = JSON.parse(message as string) as ClientMessage;
 		const state = await this.getState();
 		await this.handleMessage(connection, msg, state);
 	}
 
-	async onClose(connection: Connection) {
-		const state = await this.getState();
-		if (!state.players[connection.id]) return;
-
-		delete state.players[connection.id];
-		state.buzzes = state.buzzes.filter((b) => b.playerId !== connection.id);
-
-		if (state.hostId === connection.id) {
-			const remaining = Object.keys(state.players);
-			state.hostId = remaining[0] ?? null;
-			if (state.hostId) {
-				state.players[state.hostId].role = "host";
-			}
-		}
-
-		await this.saveState(state);
-		this.broadcast(
-			JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
-		);
-	}
+	async onClose(_connection: Connection<ConnectionSession>) {}
 
 	private initialState(): RoomState {
 		return {
@@ -62,6 +55,7 @@ export class QuizRoom extends Server<Env> {
 			totalQuestions: 10,
 			buzzes: [],
 			lastBuzzes: [],
+			chatMessages: [],
 			ruleType: "simple",
 			answerTransition: "all_order",
 			winCount: 7,
@@ -84,8 +78,10 @@ export class QuizRoom extends Server<Env> {
 			players: { ...(stored?.players ?? init.players) },
 			buzzes: [...(stored?.buzzes ?? init.buzzes)],
 			lastBuzzes: [...(stored?.lastBuzzes ?? init.lastBuzzes)],
+			chatMessages: [...(stored?.chatMessages ?? init.chatMessages)],
 		};
 		if (!s.lastBuzzes) s.lastBuzzes = [];
+		if (!s.chatMessages) s.chatMessages = [];
 		for (const p of Object.values(s.players)) {
 			if (p.correctCount == null) p.correctCount = p.score ?? 0;
 			if (p.incorrectCount == null) p.incorrectCount = 0;
@@ -110,8 +106,20 @@ export class QuizRoom extends Server<Env> {
 		doc
 			.getMap(ROOM_STATE_MAP_KEY)
 			.set(ROOM_STATE_MAP_KEY, this.normalizeState(legacyState));
+		if (legacyState?.chatMessages?.length) {
+			doc
+				.getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY)
+				.push(legacyState.chatMessages.slice(-MAX_CHAT_MESSAGES));
+		}
 		await this.saveYDoc(doc);
 		return doc;
+	}
+
+	private getChatMessages(doc: Y.Doc): ChatMessage[] {
+		return doc
+			.getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY)
+			.toArray()
+			.slice(-MAX_CHAT_MESSAGES);
 	}
 
 	private async saveYDoc(doc: Y.Doc) {
@@ -126,19 +134,49 @@ export class QuizRoom extends Server<Env> {
 		const state = doc.getMap(ROOM_STATE_MAP_KEY).get(ROOM_STATE_MAP_KEY) as
 			| Partial<RoomState>
 			| undefined;
-		return this.normalizeState(state);
+		const normalized = this.normalizeState(state);
+		normalized.chatMessages = this.getChatMessages(doc);
+		return normalized;
 	}
 
 	private async saveState(state: RoomState) {
 		const doc = await this.loadYDoc();
+		const { chatMessages: _chatMessages, ...stateWithoutChatMessages } =
+			this.normalizeState(state);
 		doc
 			.getMap(ROOM_STATE_MAP_KEY)
-			.set(ROOM_STATE_MAP_KEY, this.normalizeState(state));
+			.set(ROOM_STATE_MAP_KEY, stateWithoutChatMessages);
 		await this.saveYDoc(doc);
+	}
+
+	private async appendChatMessage(
+		chatMessage: ChatMessage,
+	): Promise<RoomState> {
+		const doc = await this.loadYDoc();
+		const messages = doc.getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY);
+		messages.push([chatMessage]);
+		const overflow = messages.length - MAX_CHAT_MESSAGES;
+		if (overflow > 0) {
+			messages.delete(0, overflow);
+		}
+		await this.saveYDoc(doc);
+
+		const state = doc.getMap(ROOM_STATE_MAP_KEY).get(ROOM_STATE_MAP_KEY) as
+			| Partial<RoomState>
+			| undefined;
+		const normalized = this.normalizeState(state);
+		normalized.chatMessages = this.getChatMessages(doc);
+		return normalized;
 	}
 
 	private send(connection: Connection, msg: ServerMessage) {
 		connection.send(JSON.stringify(msg));
+	}
+
+	private getPlayerId(
+		connection: Connection<ConnectionSession>,
+	): PlayerId | null {
+		return connection.state?.playerId ?? null;
 	}
 
 	private newPlayer(id: string, name: string, role: Player["role"]): Player {
@@ -271,39 +309,47 @@ export class QuizRoom extends Server<Env> {
 	}
 
 	private async handleMessage(
-		connection: Connection,
+		connection: Connection<ConnectionSession>,
 		msg: ClientMessage,
 		state: RoomState,
 	) {
 		switch (msg.type) {
 			case "join": {
-				if (state.players[connection.id]) {
+				const playerId = msg.sessionId?.trim() || connection.id;
+				const playerName = msg.name.trim() || "名無し";
+
+				const duplicateNameEntry = Object.entries(state.players).find(
+					([id, p]) => id !== playerId && p.name === playerName,
+				);
+				if (duplicateNameEntry) {
+					this.send(connection, {
+						type: "error",
+						message: "同じ名前のプレイヤーがすでに参加しています。",
+					});
 					this.send(connection, { type: "room_state", state });
 					return;
 				}
-				const oldEntry = Object.entries(state.players).find(
-					([, p]) => p.name === msg.name,
-				);
-				if (oldEntry) {
-					const [oldId, oldPlayer] = oldEntry;
-					delete state.players[oldId];
-					state.buzzes = state.buzzes.map((b) =>
-						b.playerId === oldId ? { ...b, playerId: connection.id } : b,
-					);
-					state.lastBuzzes = state.lastBuzzes.map((b) =>
-						b.playerId === oldId ? { ...b, playerId: connection.id } : b,
-					);
-					state.players[connection.id] = { ...oldPlayer, id: connection.id };
-					if (state.hostId === oldId) state.hostId = connection.id;
-				} else {
+
+				const existing = state.players[playerId];
+				connection.setState({ playerId });
+
+				if (existing) {
+					existing.name = playerName;
+				} else if (!state.players[playerId]) {
 					const isFirst = Object.keys(state.players).length === 0;
+
 					const player = this.newPlayer(
-						connection.id,
-						msg.name,
+						playerId,
+						playerName,
 						isFirst ? "host" : "player",
 					);
-					if (isFirst) state.hostId = connection.id;
-					state.players[connection.id] = player;
+					if (isFirst) state.hostId = playerId;
+					state.players[playerId] = player;
+				}
+
+				if (!state.hostId) {
+					state.hostId = playerId;
+					state.players[playerId].role = "host";
 				}
 				await this.saveState(state);
 				this.broadcast(
@@ -312,15 +358,45 @@ export class QuizRoom extends Server<Env> {
 				break;
 			}
 
+			case "send_chat": {
+				const playerId = this.getPlayerId(connection);
+				if (!playerId) return;
+				const player = state.players[playerId];
+				if (!player) return;
+
+				const text = msg.text.trim().slice(0, MAX_CHAT_TEXT_LENGTH);
+				if (!text) return;
+
+				const sentAt = Date.now();
+				const chatMessage: ChatMessage = {
+					id: `${sentAt}-${playerId}-${state.chatMessages.length}`,
+					playerId,
+					playerName: player.name,
+					text,
+					sentAt,
+				};
+
+				const nextState = await this.appendChatMessage(chatMessage);
+				this.broadcast(
+					JSON.stringify({
+						type: "room_state",
+						state: nextState,
+					} satisfies ServerMessage),
+				);
+				break;
+			}
+
 			case "buzz": {
 				if (state.phase !== "question" && state.phase !== "buzzed") return;
-				const player = state.players[connection.id];
+				const playerId = this.getPlayerId(connection);
+				if (!playerId) return;
+				const player = state.players[playerId];
 				if (!player || player.isEliminated || player.hasWon) return;
 				if (this.isSuspended(player, state.currentQuestionIndex)) return;
-				if (state.buzzes.some((b) => b.playerId === connection.id)) return;
+				if (state.buzzes.some((b) => b.playerId === playerId)) return;
 
 				const entry: BuzzEntry = {
-					playerId: connection.id,
+					playerId,
 					buzzedAt: Date.now(),
 				};
 				state.buzzes.push(entry);
@@ -340,7 +416,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "start_question": {
-				if (connection.id !== state.hostId) return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
 				state.lastBuzzes = [...state.buzzes];
 				state.buzzes = [];
 				state.phase = "question";
@@ -353,7 +430,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "judge": {
-				if (connection.id !== state.hostId || state.phase !== "buzzed") return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId || state.phase !== "buzzed") return;
 				const first = state.buzzes[0];
 				if (!first) return;
 				const answerer = state.players[first.playerId];
@@ -383,7 +461,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "through": {
-				if (connection.id !== state.hostId) return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
 				if (state.phase !== "question" && state.phase !== "buzzed") return;
 				state.lastBuzzes = [...state.buzzes];
 				state.buzzes = [];
@@ -396,7 +475,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "next_question": {
-				if (connection.id !== state.hostId) return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
 				state.lastBuzzes = [...state.buzzes];
 				state.buzzes = [];
 				state.phase = "waiting";
@@ -408,7 +488,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "finish_game": {
-				if (connection.id !== state.hostId) return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
 				state.phase = "finished";
 				await this.saveState(state);
 				this.broadcast(
@@ -426,7 +507,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "set_total_questions": {
-				if (connection.id !== state.hostId) return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
 				state.totalQuestions = msg.total;
 				await this.saveState(state);
 				this.broadcast(
@@ -436,7 +518,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "start_game": {
-				if (connection.id !== state.hostId || state.phase !== "lobby") return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId || state.phase !== "lobby") return;
 				state.phase = "waiting";
 				state.currentQuestionIndex = 0;
 				await this.saveState(state);
@@ -447,8 +530,8 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "restart_game": {
-				if (connection.id !== state.hostId || state.phase !== "finished")
-					return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId || state.phase !== "finished") return;
 				// プレイヤーのスコアをリセットしてロビーへ
 				for (const p of Object.values(state.players)) {
 					p.score = 0;
@@ -471,7 +554,8 @@ export class QuizRoom extends Server<Env> {
 
 			case "set_rule": {
 				// ゲーム開始後はルール変更不可
-				if (connection.id !== state.hostId || state.phase !== "lobby") return;
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId || state.phase !== "lobby") return;
 				if (msg.ruleType != null) state.ruleType = msg.ruleType;
 				if (msg.answerTransition != null)
 					state.answerTransition = msg.answerTransition;
