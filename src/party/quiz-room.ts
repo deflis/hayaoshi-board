@@ -12,7 +12,6 @@ import type {
 } from "./types";
 
 const YJS_STATE_UPDATE_KEY = "yjs-state-update";
-const LEGACY_STATE_KEY = "state";
 const ROOM_STATE_MAP_KEY = "state";
 const CHAT_MESSAGES_ARRAY_KEY = "chatMessages";
 const MAX_CHAT_MESSAGES = 100;
@@ -81,7 +80,6 @@ export class QuizRoom extends Server<Env> {
 
   private normalizeState(stored?: Partial<RoomState>): RoomState {
     const init = this.initialState();
-    // 旧フォーマットからの移行（存在しないフィールドをデフォルト値で補完）
     const s: RoomState = {
       ...init,
       ...stored,
@@ -112,16 +110,6 @@ export class QuizRoom extends Server<Env> {
       return doc;
     }
 
-    const legacyState = await this.ctx.storage.get<RoomState>(LEGACY_STATE_KEY);
-    doc
-      .getMap(ROOM_STATE_MAP_KEY)
-      .set(ROOM_STATE_MAP_KEY, this.normalizeState(legacyState));
-    if (legacyState?.chatMessages?.length) {
-      doc
-        .getArray<ChatMessage>(CHAT_MESSAGES_ARRAY_KEY)
-        .push(legacyState.chatMessages.slice(-MAX_CHAT_MESSAGES));
-    }
-    await this.saveYDoc(doc);
     return doc;
   }
 
