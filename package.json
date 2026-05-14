@@ -13,6 +13,7 @@
 		"format": "biome format",
 		"lint": "biome lint",
 		"check": "biome check",
+		"check-types": "tsc --noEmit",
 		"deploy": "bun run build && wrangler deploy",
 		"cf-typegen": "wrangler types"
 	},
