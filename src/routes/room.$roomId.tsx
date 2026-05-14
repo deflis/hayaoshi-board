@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Volume2, VolumeX } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useCallback, useState } from "react";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
 import { FinishedPhase } from "../components/room/FinishedPhase";
@@ -11,9 +10,10 @@ import { QuestionPhase } from "../components/room/QuestionPhase";
 import { ResultPhase } from "../components/room/ResultPhase";
 import { Scoreboard } from "../components/room/Scoreboard";
 import { WaitingRoom } from "../components/room/WaitingRoom";
+import { SettingsButton } from "../components/SettingsModal";
+import { useKeyboardBuzz } from "../hooks/useKeyboardBuzz";
 import { useQuizRoom } from "../hooks/useQuizRoom";
 import { useSoundEffects } from "../hooks/useSoundEffects";
-import { useUserSettings } from "../stores/userSettings";
 
 export const Route = createFileRoute("/room/$roomId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -34,8 +34,12 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
   const onServerMessage = useSoundEffects();
   const { roomState, sendMessage, myPlayerId, isHost, errorMessage } =
     useQuizRoom(roomId, name, onServerMessage);
-  const soundEnabled = useUserSettings((s) => s.soundEnabled);
-  const setSoundEnabled = useUserSettings((s) => s.setSoundEnabled);
+
+  const onBuzz = useCallback(
+    () => sendMessage({ type: "buzz" }),
+    [sendMessage],
+  );
+  useKeyboardBuzz(onBuzz);
 
   if (!roomState) {
     return (
@@ -59,14 +63,7 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setSoundEnabled(!soundEnabled)}
-          className="text-gray-400 hover:text-white transition-colors"
-          title={soundEnabled ? "効果音OFF" : "効果音ON"}
-        >
-          {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
+        <SettingsButton />
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col gap-6 lg:flex-row">
@@ -90,7 +87,7 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
           {roomState.phase === "question" && (
             <QuestionPhase
               state={roomState}
-              onBuzz={() => sendMessage({ type: "buzz" })}
+              onBuzz={onBuzz}
               isHost={isHost}
               myPlayerId={myPlayerId}
             />
@@ -99,7 +96,7 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
             <BuzzedPhase
               state={roomState}
               myPlayerId={myPlayerId}
-              onBuzz={() => sendMessage({ type: "buzz" })}
+              onBuzz={onBuzz}
               isHost={isHost}
             />
           )}
