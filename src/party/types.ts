@@ -42,6 +42,22 @@ export interface ChatMessage {
   sentAt: number;
 }
 
+export type BoardJudgement = "correct" | "incorrect" | null;
+export type BoardStatus = "closed" | "answering" | "revealed";
+
+export interface BoardAnswer {
+  playerId: PlayerId;
+  text: string;
+  submittedAt: number;
+  judgement: BoardJudgement;
+}
+
+export interface BoardState {
+  status: BoardStatus;
+  sessionId: string;
+  answers: Record<PlayerId, BoardAnswer>;
+}
+
 export interface RoomState {
   roomId: string;
   phase: RoomPhase;
@@ -52,6 +68,7 @@ export interface RoomState {
   buzzes: BuzzEntry[];
   lastBuzzes: BuzzEntry[]; // 前の問題のバズ着順（振り返り用）
   chatMessages: ChatMessage[];
+  board: BoardState;
   // ルール設定
   ruleType: RuleType;
   answerTransition: AnswerTransitionRule;
@@ -70,9 +87,45 @@ export interface RoomState {
   nonBuzzerPoints: number; // 0 = 無効
 }
 
+// ---- XState machine types ----
+
+export interface QuizContext {
+  roomId: string;
+  phase: RoomPhase;
+  hostId: PlayerId | null;
+  players: Record<PlayerId, Player>;
+  currentQuestionIndex: number;
+  totalQuestions: number;
+  buzzes: BuzzEntry[];
+  lastBuzzes: BuzzEntry[];
+  ruleType: RuleType;
+  answerTransition: AnswerTransitionRule;
+  winCount: number;
+  eliminateCount: number;
+  nbyN: number;
+  maxWinners: number;
+  addPoints: number;
+  subtractPoints: number;
+  winPoints: number;
+  eliminatePoints: number | null;
+  nonBuzzerPoints: number;
+}
+
 export type ClientMessage = (
   | { type: "join"; name: string; sessionId?: PlayerId }
   | { type: "send_chat"; text: string }
+  | { type: "open_board" }
+  | { type: "close_board" }
+  | { type: "submit_board_answer"; text: string }
+  | { type: "reveal_board_answers" }
+  | { type: "hide_board_answers" }
+  | {
+      type: "judge_board_answer";
+      playerId: PlayerId;
+      judgement: BoardJudgement;
+    }
+  | { type: "clear_board" }
+  | { type: "apply_board_scores" }
   | { type: "leave_host" }
   | { type: "claim_host" }
   | { type: "start_question" }
@@ -120,10 +173,6 @@ export type ServerMessage =
   | { type: "game_finished"; scores: Record<PlayerId, number> }
   | { type: "error"; message: string };
 
-// ---- XState machine types ----
-
-export type QuizContext = Omit<RoomState, "chatMessages">;
-
 export type QuizEvent =
   | { type: "JOIN"; playerId: PlayerId; name: string; sessionId?: PlayerId }
   | { type: "LEAVE_HOST"; playerId: PlayerId }
@@ -162,7 +211,12 @@ export type QuizEvent =
       nonBuzzerPoints?: number;
       maxWinners?: number;
     }
-  | { type: "HOST_DISCONNECTED"; playerId: PlayerId };
+  | { type: "HOST_DISCONNECTED"; playerId: PlayerId }
+  | {
+      type: "APPLY_BOARD_SCORES";
+      playerId: PlayerId;
+      judgements: Record<PlayerId, "correct" | "incorrect">;
+    };
 
 export type QuizEmit =
   | { type: "broadcastRoomState"; state: RoomState }

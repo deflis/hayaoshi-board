@@ -14,7 +14,11 @@ import type {
 } from "./types";
 
 export function getRoomState(ctx: QuizContext): RoomState {
-  return { ...ctx, chatMessages: [] };
+  return {
+    ...ctx,
+    chatMessages: [],
+    board: { status: "closed", sessionId: "", answers: {} },
+  };
 }
 
 function newPlayer(id: string, name: string, role: Player["role"]): Player {
@@ -294,6 +298,17 @@ export const quizRoomMachine = setup({
       refreshOutcomeByRule(next, target);
       return next;
     }),
+    applyBoardScores: assign(({ context, event }) => {
+      if (event.type !== "APPLY_BOARD_SCORES") return context;
+      const next = structuredClone(context);
+      for (const [pid, j] of Object.entries(event.judgements)) {
+        const target = next.players[pid];
+        if (!target) continue;
+        if (j === "correct") applyCorrectByRule(next, target);
+        else if (j === "incorrect") applyIncorrectByRule(next, target);
+      }
+      return next;
+    }),
     releaseHostOnDisconnect: assign(({ context, event }) => {
       if (event.type !== "HOST_DISCONNECTED") return context;
       const next = structuredClone(context);
@@ -526,6 +541,10 @@ export const quizRoomMachine = setup({
     HOST_DISCONNECTED: {
       guard: "isHostDisconnected",
       actions: ["releaseHostOnDisconnect", "emitBroadcast"],
+    },
+    APPLY_BOARD_SCORES: {
+      guard: "isHost",
+      actions: ["applyBoardScores", "emitBroadcast"],
     },
   },
 });

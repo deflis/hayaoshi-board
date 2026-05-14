@@ -442,8 +442,194 @@ describe("quizRoomMachine", () => {
 });
 
 describe("getRoomState", () => {
-  it("adds empty chatMessages", () => {
+  it("adds empty chatMessages and board", () => {
     const state = getRoomState(makeContext());
     expect(state.chatMessages).toEqual([]);
+    expect(state.board).toEqual({
+      status: "closed",
+      sessionId: "",
+      answers: {},
+    });
+  });
+});
+
+describe("APPLY_BOARD_SCORES", () => {
+  function makeContextWithPlayers() {
+    return makeContext({
+      hostId: "p1",
+      players: {
+        p1: {
+          id: "p1",
+          name: "Host",
+          score: 0,
+          role: "host",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+        p2: {
+          id: "p2",
+          name: "Player2",
+          score: 0,
+          role: "player",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+        p3: {
+          id: "p3",
+          name: "Player3",
+          score: 0,
+          role: "player",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+      },
+    });
+  }
+
+  it("applies correct and incorrect judgements to player scores", () => {
+    const actor = createAndStartActor(
+      makeContext({
+        hostId: "p1",
+        ruleType: "mon_batsu",
+        winCount: 7,
+        eliminateCount: 3,
+        players: {
+          p1: {
+            id: "p1",
+            name: "Host",
+            score: 0,
+            role: "host",
+            correctCount: 0,
+            incorrectCount: 0,
+            isEliminated: false,
+            hasWon: false,
+            suspendedUntilQuestion: 0,
+          },
+          p2: {
+            id: "p2",
+            name: "Player2",
+            score: 0,
+            role: "player",
+            correctCount: 0,
+            incorrectCount: 0,
+            isEliminated: false,
+            hasWon: false,
+            suspendedUntilQuestion: 0,
+          },
+          p3: {
+            id: "p3",
+            name: "Player3",
+            score: 0,
+            role: "player",
+            correctCount: 0,
+            incorrectCount: 0,
+            isEliminated: false,
+            hasWon: false,
+            suspendedUntilQuestion: 0,
+          },
+        },
+      }),
+    );
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({
+      type: "APPLY_BOARD_SCORES",
+      playerId: "p1",
+      judgements: { p2: "correct", p3: "incorrect" },
+    });
+    const { context } = actor.getSnapshot();
+    expect(context.players.p2?.score).toBe(1);
+    expect(context.players.p2?.correctCount).toBe(1);
+    expect(context.players.p3?.incorrectCount).toBe(1);
+  });
+
+  it("non-host APPLY_BOARD_SCORES is ignored", () => {
+    const actor = createAndStartActor(makeContextWithPlayers());
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({
+      type: "APPLY_BOARD_SCORES",
+      playerId: "p2",
+      judgements: { p3: "correct" },
+    });
+    const { context } = actor.getSnapshot();
+    expect(context.players.p3?.score).toBe(0);
+  });
+
+  it("works in question phase without changing phase", () => {
+    const actor = createAndStartActor(makeContextWithPlayers());
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({ type: "START_QUESTION", playerId: "p1" });
+    expect(actor.getSnapshot().value).toBe("question");
+    actor.send({
+      type: "APPLY_BOARD_SCORES",
+      playerId: "p1",
+      judgements: { p2: "correct" },
+    });
+    expect(actor.getSnapshot().value).toBe("question");
+    expect(actor.getSnapshot().context.players.p2?.score).toBe(1);
+  });
+
+  it("unknown targetPlayerId in judgements is skipped", () => {
+    const actor = createAndStartActor(makeContextWithPlayers());
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({
+      type: "APPLY_BOARD_SCORES",
+      playerId: "p1",
+      judgements: { unknown_player: "correct", p2: "correct" },
+    });
+    const { context } = actor.getSnapshot();
+    expect(context.players.p2?.score).toBe(1);
+  });
+
+  it("sets hasWon when winPoints reached", () => {
+    const ctx = makeContext({
+      hostId: "p1",
+      ruleType: "points",
+      addPoints: 3,
+      subtractPoints: 1,
+      winPoints: 3,
+      eliminatePoints: null,
+      nonBuzzerPoints: 0,
+      players: {
+        p1: {
+          id: "p1",
+          name: "Host",
+          score: 0,
+          role: "host",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+        p2: {
+          id: "p2",
+          name: "Player2",
+          score: 0,
+          role: "player",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+      },
+    });
+    const actor = createAndStartActor(ctx);
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({
+      type: "APPLY_BOARD_SCORES",
+      playerId: "p1",
+      judgements: { p2: "correct" },
+    });
+    expect(actor.getSnapshot().context.players.p2?.hasWon).toBe(true);
   });
 });

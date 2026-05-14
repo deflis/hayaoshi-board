@@ -3,6 +3,9 @@ import { Server } from "partyserver";
 import { createActor, type SnapshotFrom } from "xstate";
 import { quizRoomMachine } from "./quiz-room.machine";
 import type {
+  BoardAnswer,
+  BoardJudgement,
+  BoardState,
   ChatMessage,
   ClientMessage,
   PlayerId,
@@ -15,9 +18,15 @@ import type {
 
 const ROOM_STATE_KEY = "room-state";
 const CHAT_MESSAGES_KEY = "chat-messages";
+const BOARD_STATE_KEY = "board-state";
 const MAX_CHAT_MESSAGES = 100;
 const MAX_CHAT_TEXT_LENGTH = 300;
+const MAX_BOARD_TEXT_LENGTH = 300;
 const EMPTY_ROOM_CLEANUP_DELAY_MS = 5 * 60 * 1000;
+
+function makeInitialBoardState(): BoardState {
+  return { status: "closed", sessionId: crypto.randomUUID(), answers: {} };
+}
 
 interface ConnectionSession {
   playerId: PlayerId;
@@ -81,6 +90,42 @@ export class QuizRoom extends Server<Env> {
       await this.handleSendChat(connection, msg.text);
       return;
     }
+    if (msg.type === "open_board") {
+      await this.handleOpenBoard(connection);
+      return;
+    }
+    if (msg.type === "close_board") {
+      await this.handleCloseBoard(connection);
+      return;
+    }
+    if (msg.type === "submit_board_answer") {
+      await this.handleSubmitBoardAnswer(connection, msg.text);
+      return;
+    }
+    if (msg.type === "reveal_board_answers") {
+      await this.handleRevealBoardAnswers(connection);
+      return;
+    }
+    if (msg.type === "hide_board_answers") {
+      await this.handleHideBoardAnswers(connection);
+      return;
+    }
+    if (msg.type === "judge_board_answer") {
+      await this.handleJudgeBoardAnswer(
+        connection,
+        msg.playerId,
+        msg.judgement,
+      );
+      return;
+    }
+    if (msg.type === "clear_board") {
+      await this.handleClearBoard(connection);
+      return;
+    }
+    if (msg.type === "apply_board_scores") {
+      await this.handleApplyBoardScores(connection);
+      return;
+    }
 
     const event = this.toMachineEvent(connection, msg);
     if (!event) return;
@@ -111,28 +156,46 @@ export class QuizRoom extends Server<Env> {
   }
 
   private async getCurrentState(): Promise<RoomState> {
-    const [snapshot, chatMessages] = await Promise.all([
+    const [snapshot, chatMessages, board] = await Promise.all([
       this.ctx.storage.get<unknown>(ROOM_STATE_KEY),
       this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
+      this.ctx.storage.get<BoardState>(BOARD_STATE_KEY),
     ]);
 
     const context = isSnapshot(snapshot)
       ? snapshot.context
       : makeContext(this.name);
 
-    return { ...context, chatMessages: chatMessages ?? [] };
+    return {
+      ...context,
+      chatMessages: chatMessages ?? [],
+      board: board ?? makeInitialBoardState(),
+    };
   }
 
   private async broadcastRoomState(
     emit: QuizEmit & { type: "broadcastRoomState" },
   ) {
-    const chatMessages =
-      (await this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY)) ?? [];
+    const [chatMessages, board] = await Promise.all([
+      this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
+      this.ctx.storage.get<BoardState>(BOARD_STATE_KEY),
+    ]);
     this.broadcast(
       JSON.stringify({
         type: "room_state",
-        state: { ...emit.state, chatMessages },
+        state: {
+          ...emit.state,
+          chatMessages: chatMessages ?? [],
+          board: board ?? makeInitialBoardState(),
+        },
       } satisfies ServerMessage),
+    );
+  }
+
+  private async broadcastCurrentRoomState() {
+    const state = await this.getCurrentState();
+    this.broadcast(
+      JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
     );
   }
 
@@ -324,13 +387,152 @@ export class QuizRoom extends Server<Env> {
     ].slice(-MAX_CHAT_MESSAGES);
 
     await this.ctx.storage.put(CHAT_MESSAGES_KEY, messages);
+    await this.broadcastCurrentRoomState();
+  }
 
-    this.broadcast(
-      JSON.stringify({
-        type: "room_state",
-        state: { ...context, chatMessages: messages },
-      } satisfies ServerMessage),
-    );
+  private async getBoardAndContext(): Promise<{
+    board: BoardState;
+    context: QuizContext;
+  }> {
+    const [snapshot, board] = await Promise.all([
+      this.ctx.storage.get<unknown>(ROOM_STATE_KEY),
+      this.ctx.storage.get<BoardState>(BOARD_STATE_KEY),
+    ]);
+    const context = isSnapshot(snapshot)
+      ? snapshot.context
+      : makeContext(this.name);
+    return { board: board ?? makeInitialBoardState(), context };
+  }
+
+  private async saveBoardAndBroadcast(board: BoardState): Promise<void> {
+    await this.ctx.storage.put(BOARD_STATE_KEY, board);
+    await this.broadcastCurrentRoomState();
+  }
+
+  private async handleOpenBoard(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    await this.saveBoardAndBroadcast({
+      status: "answering",
+      sessionId: crypto.randomUUID(),
+      answers: {},
+    });
+  }
+
+  private async handleCloseBoard(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board, context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    await this.saveBoardAndBroadcast({ ...board, status: "closed" });
+  }
+
+  private async handleSubmitBoardAnswer(
+    connection: Connection<ConnectionSession>,
+    text: string,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board, context } = await this.getBoardAndContext();
+    if (board.status !== "answering") return;
+    if (board.answers[playerId]) return;
+    const player = context.players[playerId];
+    if (!player) return;
+    const trimmed = text.trim().slice(0, MAX_BOARD_TEXT_LENGTH);
+    if (!trimmed) return;
+    const next: BoardState = {
+      ...board,
+      answers: {
+        ...board.answers,
+        [playerId]: {
+          playerId,
+          text: trimmed,
+          submittedAt: Date.now(),
+          judgement: null,
+        } satisfies BoardAnswer,
+      },
+    };
+    await this.saveBoardAndBroadcast(next);
+  }
+
+  private async handleRevealBoardAnswers(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board, context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    await this.saveBoardAndBroadcast({ ...board, status: "revealed" });
+  }
+
+  private async handleHideBoardAnswers(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board, context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    await this.saveBoardAndBroadcast({ ...board, status: "answering" });
+  }
+
+  private async handleJudgeBoardAnswer(
+    connection: Connection<ConnectionSession>,
+    targetPlayerId: PlayerId,
+    judgement: BoardJudgement,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board, context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    const answer = board.answers[targetPlayerId];
+    if (!answer) return;
+    const next: BoardState = {
+      ...board,
+      answers: {
+        ...board.answers,
+        [targetPlayerId]: { ...answer, judgement },
+      },
+    };
+    await this.saveBoardAndBroadcast(next);
+  }
+
+  private async handleClearBoard(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
+    await this.saveBoardAndBroadcast(makeInitialBoardState());
+  }
+
+  private async handleApplyBoardScores(
+    connection: Connection<ConnectionSession>,
+  ): Promise<void> {
+    const playerId = connection.state?.playerId;
+    if (!playerId) return;
+    const { board } = await this.getBoardAndContext();
+    const judgements: Record<PlayerId, "correct" | "incorrect"> = {};
+    for (const ans of Object.values(board.answers)) {
+      if (ans.judgement === "correct" || ans.judgement === "incorrect") {
+        judgements[ans.playerId] = ans.judgement;
+      }
+    }
+    // board をクリアしてからスコアを反映（二重反映防止）
+    await this.ctx.storage.put(BOARD_STATE_KEY, makeInitialBoardState());
+    const emits = await this.processEvent({
+      type: "APPLY_BOARD_SCORES",
+      playerId,
+      judgements,
+    });
+    await this.handleEmits(emits);
+    // emitBroadcast が broadcastRoomState を呼ぶが、そこで最新 board（クリア済み）を合成して送る
   }
 
   private send(connection: Connection, msg: ServerMessage) {
