@@ -79,6 +79,7 @@ export type ClientMessage = (
   | { type: "through" }
   | { type: "next_question" }
   | { type: "finish_game" }
+  | { type: "resume_game" }
   | { type: "start_game" }
   | { type: "restart_game" }
   | { type: "set_total_questions"; total: number }
@@ -130,6 +131,7 @@ export type QuizEvent =
   | { type: "THROUGH"; playerId: PlayerId }
   | { type: "NEXT_QUESTION"; playerId: PlayerId }
   | { type: "FINISH_GAME"; playerId: PlayerId }
+  | { type: "RESUME_GAME"; playerId: PlayerId }
   | { type: "START_GAME"; playerId: PlayerId }
   | { type: "RESTART_GAME"; playerId: PlayerId }
   | { type: "START_QUESTION"; playerId: PlayerId }

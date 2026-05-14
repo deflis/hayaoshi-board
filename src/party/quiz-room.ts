@@ -241,6 +241,9 @@ export class QuizRoom extends Server<Env> {
       case "finish_game":
         if (!playerId) return null;
         return { type: "FINISH_GAME", playerId };
+      case "resume_game":
+        if (!playerId) return null;
+        return { type: "RESUME_GAME", playerId };
       case "start_game":
         if (!playerId) return null;
         return { type: "START_GAME", playerId };

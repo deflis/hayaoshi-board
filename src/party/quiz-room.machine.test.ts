@@ -360,6 +360,43 @@ describe("quizRoomMachine", () => {
     expect(ctx.currentQuestionIndex).toBe(0);
   });
 
+  it("RESUME_GAME preserves scores and transitions to waiting", () => {
+    const ctx = makeContext({
+      hostId: "p1",
+      players: {
+        p1: { id: "p1", name: "A", score: 5, role: "host", correctCount: 3, incorrectCount: 1, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
+      },
+    });
+    const actor = createAndStartActor(ctx);
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    expect(actor.getSnapshot().value).toBe("waiting");
+    actor.send({ type: "FINISH_GAME", playerId: "p1" });
+    expect(actor.getSnapshot().value).toBe("finished");
+    const questionIndexBefore = actor.getSnapshot().context.currentQuestionIndex;
+    actor.send({ type: "RESUME_GAME", playerId: "p1" });
+    const snap = actor.getSnapshot();
+    expect(snap.value).toBe("waiting");
+    expect(snap.context.players.p1?.score).toBe(5);
+    expect(snap.context.players.p1?.correctCount).toBe(3);
+    expect(snap.context.players.p1?.incorrectCount).toBe(1);
+    expect(snap.context.currentQuestionIndex).toBe(questionIndexBefore);
+  });
+
+  it("RESUME_GAME by non-host is ignored", () => {
+    const ctx = makeContext({
+      hostId: "p1",
+      players: {
+        p1: { id: "p1", name: "A", score: 5, role: "host", correctCount: 0, incorrectCount: 0, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
+        p2: { id: "p2", name: "B", score: 0, role: "player", correctCount: 0, incorrectCount: 0, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
+      },
+    });
+    const actor = createAndStartActor(ctx);
+    actor.send({ type: "START_GAME", playerId: "p1" });
+    actor.send({ type: "FINISH_GAME", playerId: "p1" });
+    actor.send({ type: "RESUME_GAME", playerId: "p2" });
+    expect(actor.getSnapshot().value).toBe("finished");
+  });
+
   it("duplicate name emits error and does not join", () => {
     const actor = createAndStartActor();
     const emitted = collectEmits(actor);

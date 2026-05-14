@@ -108,6 +108,8 @@ export const quizRoomMachine = setup({
       );
     },
     hasHost: ({ context }) => !!context.hostId,
+    hasActivePlayer: ({ context }) =>
+      Object.values(context.players).some((p) => !p.hasWon && !p.isEliminated),
     isHostDisconnected: ({ context, event }) => {
       return (
         event.type === "HOST_DISCONNECTED" && event.playerId === context.hostId
@@ -236,6 +238,12 @@ export const quizRoomMachine = setup({
       next.currentQuestionIndex = 0;
       next.buzzes = [];
       next.lastBuzzes = [];
+      return next;
+    }),
+    resumeGame: assign(({ context }) => {
+      const next = structuredClone(context);
+      next.phase = "waiting";
+      next.buzzes = [];
       return next;
     }),
     setTotalQuestions: assign(({ context, event }) => {
@@ -470,6 +478,11 @@ export const quizRoomMachine = setup({
           guard: "isHost",
           target: "lobby",
           actions: ["restartGame", "emitBroadcast"],
+        },
+        RESUME_GAME: {
+          guard: and(["isHost", "hasActivePlayer"]),
+          target: "waiting",
+          actions: ["resumeGame", "emitBroadcast"],
         },
       },
     },

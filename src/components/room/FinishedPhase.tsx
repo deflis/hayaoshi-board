@@ -9,6 +9,9 @@ interface Props {
 
 export function FinishedPhase({ players, state, isHost, send }: Props) {
   const isMonBatsu = state.ruleType !== "simple" && state.ruleType !== "points";
+  const hasActivePlayer = Object.values(state.players).some(
+    (p) => !p.hasWon && !p.isEliminated,
+  );
 
   const sorted = [...players].sort((a, b) => {
     if (a.hasWon !== b.hasWon) return a.hasWon ? -1 : 1;
@@ -55,13 +58,24 @@ export function FinishedPhase({ players, state, isHost, send }: Props) {
       </div>
 
       {isHost && (
-        <button
-          type="button"
-          onClick={() => send({ type: "restart_game" })}
-          className="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
-        >
-          もう1回（ロビーへ戻る）
-        </button>
+        <div className="mt-4 flex flex-col gap-3 w-full max-w-sm">
+          {hasActivePlayer && (
+            <button
+              type="button"
+              onClick={() => send({ type: "resume_game" })}
+              className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
+            >
+              続きから再開
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => send({ type: "restart_game" })}
+            className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
+          >
+            スコアリセットしてもう1回
+          </button>
+        </div>
       )}
     </div>
   );
