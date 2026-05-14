@@ -355,74 +355,24 @@ export const quizRoomMachine = setup({
     lobby: {
       entry: assign({ phase: "lobby" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         START_GAME: {
-          guard: and(["isHost", "isPhaseLobby"]),
+          guard: "isHost",
           target: "waiting",
           actions: ["startGame", "emitBroadcast"],
         },
         SET_RULE: {
-          guard: and(["isHost", "isPhaseLobby"]),
+          guard: "isHost",
           actions: ["setRule", "emitBroadcast"],
         },
         SET_TOTAL_QUESTIONS: {
           guard: "isHost",
           actions: ["setTotalQuestions", "emitBroadcast"],
         },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
-        },
       },
     },
     waiting: {
       entry: assign({ phase: "waiting" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         START_QUESTION: {
           guard: "isHost",
           target: "question",
@@ -438,38 +388,11 @@ export const quizRoomMachine = setup({
           target: "finished",
           actions: ["finishGame", "emitGameFinished", "emitBroadcast"],
         },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
-        },
       },
     },
     question: {
       entry: assign({ phase: "question" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         BUZZ: {
           guard: "canBuzz",
           target: "buzzed",
@@ -480,38 +403,11 @@ export const quizRoomMachine = setup({
           target: "waiting",
           actions: ["throughQuestion", "emitBroadcast"],
         },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
-        },
       },
     },
     buzzed: {
       entry: assign({ phase: "buzzed" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         BUZZ: {
           guard: "canBuzz",
           actions: ["appendBuzz", "emitBuzzAccepted", "emitBroadcast"],
@@ -558,38 +454,11 @@ export const quizRoomMachine = setup({
           target: "waiting",
           actions: ["throughBuzzed", "emitBroadcast"],
         },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
-        },
       },
     },
     result: {
       entry: assign({ phase: "result" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         NEXT_QUESTION: {
           guard: "isHost",
           target: "waiting",
@@ -605,51 +474,47 @@ export const quizRoomMachine = setup({
           target: "finished",
           actions: ["finishGame", "emitGameFinished", "emitBroadcast"],
         },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
-        },
       },
     },
     finished: {
       entry: assign({ phase: "finished" }),
       on: {
-        JOIN: [
-          {
-            guard: "hasDuplicateName",
-            actions: ["emitDuplicateNameError", "emitBroadcast"],
-          },
-          { actions: ["joinPlayer", "emitBroadcast"] },
-        ],
-        LEAVE_HOST: [
-          {
-            guard: and(["isHost", "canChangeHost"]),
-            actions: ["leaveHost", "emitBroadcast"],
-          },
-          {
-            guard: "isHost",
-            actions: "emitCanNotLeaveHostError",
-          },
-        ],
-        CLAIM_HOST: [
-          {
-            guard: and(["isExistingPlayer", not("hasHost")]),
-            actions: ["claimHost", "emitBroadcast"],
-          },
-        ],
         RESTART_GAME: {
-          guard: and(["isHost", "isPhaseFinished"]),
+          guard: "isHost",
           target: "lobby",
           actions: ["restartGame", "emitBroadcast"],
-        },
-        SET_PLAYER_STATS: {
-          guard: "isHost",
-          actions: ["setPlayerStats", "emitBroadcast"],
         },
       },
     },
   },
   on: {
+    JOIN: [
+      {
+        guard: "hasDuplicateName",
+        actions: ["emitDuplicateNameError", "emitBroadcast"],
+      },
+      { actions: ["joinPlayer", "emitBroadcast"] },
+    ],
+    LEAVE_HOST: [
+      {
+        guard: and(["isHost", "canChangeHost"]),
+        actions: ["leaveHost", "emitBroadcast"],
+      },
+      {
+        guard: "isHost",
+        actions: "emitCanNotLeaveHostError",
+      },
+    ],
+    CLAIM_HOST: [
+      {
+        guard: and(["isExistingPlayer", not("hasHost")]),
+        actions: ["claimHost", "emitBroadcast"],
+      },
+    ],
+    SET_PLAYER_STATS: {
+      guard: "isHost",
+      actions: ["setPlayerStats", "emitBroadcast"],
+    },
     HOST_DISCONNECTED: {
       guard: "isHostDisconnected",
       actions: ["releaseHostOnDisconnect", "emitBroadcast"],

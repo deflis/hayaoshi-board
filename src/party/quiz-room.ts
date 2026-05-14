@@ -1,6 +1,6 @@
 import type { Connection, WSMessage } from "partyserver";
 import { Server } from "partyserver";
-import { createActor } from "xstate";
+import { createActor, type SnapshotFrom } from "xstate";
 import { quizRoomMachine } from "./quiz-room.machine";
 import type {
   ChatMessage,
@@ -44,6 +44,17 @@ function makeContext(roomId: string): QuizContext {
     eliminatePoints: null,
     nonBuzzerPoints: 0,
   };
+}
+function isSnapshot(
+  data: unknown,
+): data is SnapshotFrom<typeof quizRoomMachine> {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "status" in data &&
+    "value" in data &&
+    "context" in data
+  );
 }
 
 export class QuizRoom extends Server<Env> {
@@ -104,18 +115,9 @@ export class QuizRoom extends Server<Env> {
       this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
     ]);
 
-    let context: QuizContext;
-    if (
-      snapshot &&
-      typeof snapshot === "object" &&
-      "context" in snapshot &&
-      snapshot.context &&
-      typeof snapshot.context === "object"
-    ) {
-      context = snapshot.context as QuizContext;
-    } else {
-      context = makeContext(this.name);
-    }
+    const context = isSnapshot(snapshot)
+      ? snapshot.context
+      : makeContext(this.name);
 
     return { ...context, chatMessages: chatMessages ?? [] };
   }
@@ -136,13 +138,8 @@ export class QuizRoom extends Server<Env> {
   private async processEvent(event: QuizEvent): Promise<QuizEmit[]> {
     const input = makeContext(this.name);
     const stored = await this.ctx.storage.get<unknown>(ROOM_STATE_KEY);
-    const isStoredSnapshot =
-      stored &&
-      typeof stored === "object" &&
-      "value" in stored &&
-      "context" in stored;
 
-    const actor = isStoredSnapshot
+    const actor = isSnapshot(stored)
       ? createActor(quizRoomMachine, { snapshot: stored, input })
       : createActor(quizRoomMachine, { input });
     actor.start();
@@ -215,6 +212,7 @@ export class QuizRoom extends Server<Env> {
     switch (msg.type) {
       case "join": {
         const id = msg.sessionId?.trim() || connection.id;
+        connection.setState({ playerId: id });
         return {
           type: "JOIN",
           playerId: id,
@@ -298,18 +296,9 @@ export class QuizRoom extends Server<Env> {
       this.ctx.storage.get<ChatMessage[]>(CHAT_MESSAGES_KEY),
     ]);
 
-    let context: QuizContext;
-    if (
-      stored &&
-      typeof stored === "object" &&
-      "context" in stored &&
-      stored.context &&
-      typeof stored.context === "object"
-    ) {
-      context = stored.context as QuizContext;
-    } else {
-      context = makeContext(this.name);
-    }
+    const context = isSnapshot(stored)
+      ? stored.context
+      : makeContext(this.name);
 
     const player = context.players[playerId];
     if (!player) return;

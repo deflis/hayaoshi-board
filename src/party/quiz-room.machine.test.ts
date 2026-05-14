@@ -138,6 +138,9 @@ describe("quizRoomMachine", () => {
           score?: number;
           correctCount?: number;
           incorrectCount?: number;
+          isEliminated?: boolean;
+          hasWon?: boolean;
+          suspendedUntilQuestion?: number;
         }
       >;
       buzzPlayerIds?: string[];
@@ -153,9 +156,9 @@ describe("quizRoomMachine", () => {
           role: p.id === ctx.hostId ? "host" : "player",
           correctCount: p.correctCount ?? 0,
           incorrectCount: p.incorrectCount ?? 0,
-          isEliminated: false,
-          hasWon: false,
-          suspendedUntilQuestion: 0,
+          isEliminated: p.isEliminated ?? false,
+          hasWon: p.hasWon ?? false,
+          suspendedUntilQuestion: p.suspendedUntilQuestion ?? 0,
         };
       }
     }
@@ -342,7 +345,6 @@ describe("quizRoomMachine", () => {
           score: 5,
           correctCount: 3,
           incorrectCount: 1,
-          hasWon: true,
         },
       },
       buzzPlayerIds: ["p1"],
