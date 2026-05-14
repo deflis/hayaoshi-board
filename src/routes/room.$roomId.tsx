@@ -3,6 +3,7 @@ import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
 import { FinishedPhase } from "../components/room/FinishedPhase";
 import { HostControls } from "../components/room/HostControls";
+import { HostRoleControls } from "../components/room/HostRoleControls";
 import { LobbyPhase } from "../components/room/LobbyPhase";
 import { QuestionPhase } from "../components/room/QuestionPhase";
 import { ResultPhase } from "../components/room/ResultPhase";
@@ -104,6 +105,12 @@ function RoomPage() {
 						state={roomState}
 					/>
 					{isHost && <HostControls state={roomState} send={sendMessage} />}
+					<HostRoleControls
+						state={roomState}
+						isHost={isHost}
+						myPlayerId={myPlayerId}
+						send={sendMessage}
+					/>
 					<ChatPanel
 						state={roomState}
 						myPlayerId={myPlayerId}

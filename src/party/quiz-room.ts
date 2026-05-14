@@ -200,6 +200,21 @@ export class QuizRoom extends Server<Env> {
 		);
 	}
 
+	private canChangeHost(state: RoomState): boolean {
+		return (
+			state.phase === "lobby" ||
+			state.phase === "waiting" ||
+			state.phase === "result" ||
+			state.phase === "finished"
+		);
+	}
+
+	private syncPlayerRoles(state: RoomState): void {
+		for (const player of Object.values(state.players)) {
+			player.role = player.id === state.hostId ? "host" : "player";
+		}
+	}
+
 	// 誤答後の遷移。buzzes を保存してから遷移する
 	private applyTransitionOnIncorrect(state: RoomState): void {
 		switch (state.answerTransition) {
@@ -347,10 +362,48 @@ export class QuizRoom extends Server<Env> {
 					state.players[playerId] = player;
 				}
 
-				if (!state.hostId) {
-					state.hostId = playerId;
-					state.players[playerId].role = "host";
+				this.syncPlayerRoles(state);
+				await this.saveState(state);
+				this.broadcast(
+					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
+				);
+				break;
+			}
+
+			case "leave_host": {
+				const playerId = this.getPlayerId(connection);
+				if (!playerId || playerId !== state.hostId) return;
+				if (!this.canChangeHost(state)) {
+					this.send(connection, {
+						type: "error",
+						message: "問題中はホストを抜けられません。",
+					});
+					return;
 				}
+
+				state.hostId = null;
+				this.syncPlayerRoles(state);
+				await this.saveState(state);
+				this.broadcast(
+					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
+				);
+				break;
+			}
+
+			case "claim_host": {
+				const playerId = this.getPlayerId(connection);
+				if (!playerId || !state.players[playerId]) return;
+				if (state.hostId) return;
+				if (!this.canChangeHost(state)) {
+					this.send(connection, {
+						type: "error",
+						message: "問題中はホストになれません。",
+					});
+					return;
+				}
+
+				state.hostId = playerId;
+				this.syncPlayerRoles(state);
 				await this.saveState(state);
 				this.broadcast(
 					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),

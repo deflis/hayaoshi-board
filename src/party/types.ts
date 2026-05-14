@@ -71,6 +71,8 @@ export interface RoomState {
 export type ClientMessage =
 	| { type: "join"; name: string; sessionId?: PlayerId }
 	| { type: "send_chat"; text: string }
+	| { type: "leave_host" }
+	| { type: "claim_host" }
 	| { type: "start_question" }
 	| { type: "buzz" }
 	| { type: "judge"; correct: boolean }
