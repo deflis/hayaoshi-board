@@ -115,3 +115,57 @@ export type ServerMessage =
     }
   | { type: "game_finished"; scores: Record<PlayerId, number> }
   | { type: "error"; message: string };
+
+// ---- XState machine types ----
+
+export type QuizContext = Omit<RoomState, "chatMessages">;
+
+export type QuizEvent =
+  | { type: "JOIN"; playerId: PlayerId; name: string; sessionId?: PlayerId }
+  | { type: "LEAVE_HOST"; playerId: PlayerId }
+  | { type: "CLAIM_HOST"; playerId: PlayerId }
+  | { type: "SEND_CHAT"; playerId: PlayerId; text: string }
+  | { type: "BUZZ"; playerId: PlayerId }
+  | { type: "JUDGE"; playerId: PlayerId; correct: boolean }
+  | { type: "THROUGH"; playerId: PlayerId }
+  | { type: "NEXT_QUESTION"; playerId: PlayerId }
+  | { type: "FINISH_GAME"; playerId: PlayerId }
+  | { type: "START_GAME"; playerId: PlayerId }
+  | { type: "RESTART_GAME"; playerId: PlayerId }
+  | { type: "START_QUESTION"; playerId: PlayerId }
+  | { type: "SET_TOTAL_QUESTIONS"; playerId: PlayerId; total: number }
+  | {
+      type: "SET_PLAYER_STATS";
+      playerId: PlayerId;
+      targetPlayerId: PlayerId;
+      score?: number;
+      correctCount?: number;
+      incorrectCount?: number;
+    }
+  | {
+      type: "SET_RULE";
+      playerId: PlayerId;
+      ruleType?: RuleType;
+      answerTransition?: AnswerTransitionRule;
+      winCount?: number;
+      eliminateCount?: number;
+      nbyN?: number;
+      addPoints?: number;
+      subtractPoints?: number;
+      winPoints?: number;
+      eliminatePoints?: number | null;
+      nonBuzzerPoints?: number;
+    }
+  | { type: "HOST_DISCONNECTED"; playerId: PlayerId };
+
+export type QuizEmit =
+  | { type: "broadcastRoomState"; state: RoomState }
+  | { type: "buzzAccepted"; entry: BuzzEntry; playerName: string }
+  | {
+      type: "judgeResult";
+      correct: boolean;
+      playerId: PlayerId;
+      scores: Record<PlayerId, number>;
+    }
+  | { type: "gameFinished"; scores: Record<PlayerId, number> }
+  | { type: "errorOccurred"; playerId: PlayerId; message: string };
