@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import usePartySocket from "partysocket/react";
 import { type FormEvent, useCallback, useState } from "react";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
@@ -14,6 +15,7 @@ import { SettingsButton } from "../components/SettingsModal";
 import { useKeyboardBuzz } from "../hooks/useKeyboardBuzz";
 import { useQuizRoom } from "../hooks/useQuizRoom";
 import { useSoundEffects } from "../hooks/useSoundEffects";
+import type { ServerMessage } from "../party/types";
 
 export const Route = createFileRoute("/room/$roomId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -140,6 +142,20 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
 function JoinRoomPage({ roomId }: { roomId: string }) {
   const navigate = useNavigate();
   const [name, setName] = useState("");
+  const [playerCount, setPlayerCount] = useState<number | null>(null);
+
+  usePartySocket({
+    host:
+      typeof window !== "undefined" ? window.location.host : "localhost:3000",
+    party: "quiz-room",
+    room: roomId,
+    onMessage(event: MessageEvent) {
+      const msg = JSON.parse(event.data as string) as ServerMessage;
+      if (msg.type === "room_state") {
+        setPlayerCount(Object.keys(msg.state.players).length);
+      }
+    },
+  });
 
   const handleJoin = (e: FormEvent) => {
     e.preventDefault();
@@ -157,8 +173,13 @@ function JoinRoomPage({ roomId }: { roomId: string }) {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 text-white">
       <div className="w-full max-w-sm">
         <h1 className="text-3xl font-black text-center mb-2">ルームに参加</h1>
-        <p className="text-gray-400 text-center mb-8 text-sm">
+        <p className="text-gray-400 text-center mb-1 text-sm">
           ルーム: <span className="font-mono text-white">{roomId}</span>
+        </p>
+        <p className="text-gray-500 text-center mb-8 text-sm">
+          {playerCount === null
+            ? "接続中..."
+            : `現在 ${playerCount} 人が参加中`}
         </p>
 
         <form onSubmit={handleJoin} className="space-y-4">
