@@ -1,4 +1,5 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { type FormEvent, useState } from "react";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
 import { ChatPanel } from "../components/room/ChatPanel";
 import { FinishedPhase } from "../components/room/FinishedPhase";
@@ -15,17 +16,18 @@ export const Route = createFileRoute("/room/$roomId")({
 	validateSearch: (search: Record<string, unknown>) => ({
 		name: typeof search.name === "string" ? search.name : "",
 	}),
-	beforeLoad({ search }) {
-		if (!search.name) {
-			throw redirect({ to: "/" });
-		}
-	},
 	component: RoomPage,
 });
 
 function RoomPage() {
 	const { roomId } = Route.useParams();
 	const { name } = Route.useSearch();
+	if (!name) return <JoinRoomPage roomId={roomId} />;
+
+	return <ActiveRoomPage roomId={roomId} name={name} />;
+}
+
+function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
 	const { roomState, sendMessage, myPlayerId, isHost, errorMessage } =
 		useQuizRoom(roomId, name);
 
@@ -119,6 +121,61 @@ function RoomPage() {
 						send={sendMessage}
 					/>
 				</aside>
+			</div>
+		</div>
+	);
+}
+
+function JoinRoomPage({ roomId }: { roomId: string }) {
+	const navigate = useNavigate();
+	const [name, setName] = useState("");
+
+	const handleJoin = (e: FormEvent) => {
+		e.preventDefault();
+		const playerName = name.trim();
+		if (!playerName) return;
+		navigate({
+			to: "/room/$roomId",
+			params: { roomId },
+			search: { name: playerName },
+			replace: true,
+		});
+	};
+
+	return (
+		<div className="min-h-screen bg-gray-900 flex items-center justify-center px-4 text-white">
+			<div className="w-full max-w-sm">
+				<h1 className="text-3xl font-black text-center mb-2">ルームに参加</h1>
+				<p className="text-gray-400 text-center mb-8 text-sm">
+					ルーム: <span className="font-mono text-white">{roomId}</span>
+				</p>
+
+				<form onSubmit={handleJoin} className="space-y-4">
+					<div>
+						<label
+							htmlFor="join-player-name"
+							className="block text-sm text-gray-400 mb-1"
+						>
+							プレイヤー名
+						</label>
+						<input
+							id="join-player-name"
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="名前を入力"
+							required
+							className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+						/>
+					</div>
+
+					<button
+						type="submit"
+						className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors"
+					>
+						参加する
+					</button>
+				</form>
 			</div>
 		</div>
 	);
