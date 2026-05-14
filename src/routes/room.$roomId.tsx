@@ -79,7 +79,7 @@ function RoomPage() {
         </main>
 
         <aside className="w-56 shrink-0 space-y-4">
-          <Scoreboard players={players} hostId={roomState.hostId} />
+          <Scoreboard players={players} hostId={roomState.hostId} state={roomState} />
           {isHost && (
             <HostControls state={roomState} send={sendMessage} />
           )}
