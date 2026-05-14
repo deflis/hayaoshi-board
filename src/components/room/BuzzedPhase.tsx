@@ -15,6 +15,15 @@ export function BuzzedPhase({ state, myPlayerId, onBuzz, isHost }: Props) {
     ? buzzes.some((b) => b.playerId === myPlayerId)
     : false;
 
+  const myPlayer = myPlayerId ? players[myPlayerId] : null;
+  const isSuspended =
+    myPlayer != null &&
+    state.ruleType === "mon_kyu" &&
+    myPlayer.suspendedUntilQuestion > 0 &&
+    state.currentQuestionIndex <= myPlayer.suspendedUntilQuestion;
+  const isIneligible = myPlayer?.isEliminated || myPlayer?.hasWon;
+  const canBuzz = !isHost && !alreadyBuzzed && !isSuspended && !isIneligible;
+
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-white">
       <h2 className="text-xl font-bold text-gray-300">早押し結果</h2>
@@ -52,11 +61,17 @@ export function BuzzedPhase({ state, myPlayerId, onBuzz, isHost }: Props) {
         })}
       </div>
 
-      {!isHost && !alreadyBuzzed && (
+      {canBuzz && (
         <div className="flex flex-col items-center gap-2">
           <BuzzButton onClick={onBuzz} />
           <p className="text-gray-400 text-xs">まだ間に合います！</p>
         </div>
+      )}
+
+      {isSuspended && myPlayer && (
+        <p className="text-yellow-400 text-sm font-bold">
+          💤 休み中（あと{myPlayer.suspendedUntilQuestion - state.currentQuestionIndex + 1}問）
+        </p>
       )}
 
       {!isHost && alreadyBuzzed && (

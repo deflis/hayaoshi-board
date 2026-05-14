@@ -51,36 +51,41 @@ export class QuizRoom extends Server<Env> {
   private initialState(): RoomState {
     return {
       roomId: this.name,
-      phase: "waiting",
+      phase: "lobby",
       hostId: null,
       players: {},
       currentQuestionIndex: 0,
       totalQuestions: 10,
       buzzes: [],
+      lastBuzzes: [],
       ruleType: "simple",
+      answerTransition: "all_order",
       winCount: 7,
       eliminateCount: 3,
-      answerTransition: "all_order",
+      nbyN: 5,
+      addPoints: 1,
+      subtractPoints: 1,
+      winPoints: 7,
+      eliminatePoints: null,
+      nonBuzzerPoints: 0,
     };
   }
 
   private async getState(): Promise<RoomState> {
     const stored = await this.ctx.storage.get<RoomState>("state");
     if (!stored) return this.initialState();
-    // 旧フォーマットからの移行
-    if (!stored.buzzes) stored.buzzes = [];
-    if (!stored.ruleType) stored.ruleType = "simple";
-    if (stored.winCount == null) stored.winCount = 7;
-    if (stored.eliminateCount == null) stored.eliminateCount = 3;
-    if (!stored.answerTransition) stored.answerTransition = "all_order";
-    // Player フィールド移行
-    for (const p of Object.values(stored.players)) {
+    const init = this.initialState();
+    // 旧フォーマットからの移行（存在しないフィールドをデフォルト値で補完）
+    const s = { ...init, ...stored };
+    if (!s.lastBuzzes) s.lastBuzzes = [];
+    for (const p of Object.values(s.players)) {
       if (p.correctCount == null) p.correctCount = p.score ?? 0;
       if (p.incorrectCount == null) p.incorrectCount = 0;
       if (p.isEliminated == null) p.isEliminated = false;
       if (p.hasWon == null) p.hasWon = false;
+      if (p.suspendedUntilQuestion == null) p.suspendedUntilQuestion = 0;
     }
-    return stored;
+    return s;
   }
 
   private async saveState(state: RoomState) {
@@ -101,29 +106,118 @@ export class QuizRoom extends Server<Env> {
       incorrectCount: 0,
       isEliminated: false,
       hasWon: false,
+      suspendedUntilQuestion: 0,
     };
   }
 
+  private isSuspended(player: Player, questionIndex: number): boolean {
+    return player.suspendedUntilQuestion > 0 && questionIndex <= player.suspendedUntilQuestion;
+  }
+
+  // 誤答後の遷移。buzzes を保存してから遷移する
   private applyTransitionOnIncorrect(state: RoomState): void {
     switch (state.answerTransition) {
       case "single_chance":
+        state.lastBuzzes = [...state.buzzes];
         state.buzzes = [];
         state.phase = "waiting";
         break;
       case "endless_chance":
+        state.lastBuzzes = [...state.buzzes];
         state.buzzes = [];
         state.phase = "question";
         break;
       case "second_chance":
         state.buzzes = state.buzzes.slice(1);
-        state.phase = state.buzzes.length > 0 ? "buzzed" : "waiting";
+        if (state.buzzes.length > 0) {
+          state.phase = "buzzed";
+        } else {
+          state.lastBuzzes = [];
+          state.phase = "waiting";
+        }
         break;
       case "all_order":
       default:
         state.buzzes = state.buzzes.slice(1);
-        state.phase = state.buzzes.length > 0 ? "buzzed" : "question";
+        if (state.buzzes.length > 0) {
+          state.phase = "buzzed";
+        } else {
+          state.lastBuzzes = [];
+          state.phase = "question";
+        }
         break;
     }
+  }
+
+  private applyCorrectJudge(state: RoomState, answerer: Player): void {
+    answerer.correctCount += 1;
+
+    switch (state.ruleType) {
+      case "simple":
+        answerer.score += 1;
+        break;
+      case "mon_batsu":
+      case "mon_kyu":
+        answerer.score = answerer.correctCount;
+        if (answerer.correctCount >= state.winCount) answerer.hasWon = true;
+        break;
+      case "nbn":
+        answerer.score = answerer.correctCount;
+        if (answerer.correctCount >= state.nbyN && answerer.incorrectCount < state.nbyN) {
+          answerer.hasWon = true;
+        }
+        break;
+      case "points":
+        answerer.score += state.addPoints;
+        if (state.nonBuzzerPoints > 0) {
+          const buzzedIds = new Set(state.buzzes.map((b) => b.playerId));
+          for (const p of Object.values(state.players)) {
+            if (!buzzedIds.has(p.id) && !p.isEliminated && !p.hasWon) {
+              p.score += state.nonBuzzerPoints;
+            }
+          }
+        }
+        if (answerer.score >= state.winPoints) answerer.hasWon = true;
+        break;
+    }
+
+    state.lastBuzzes = [...state.buzzes];
+    state.phase = "result";
+  }
+
+  private applyIncorrectJudge(state: RoomState, answerer: Player): void {
+    answerer.incorrectCount += 1;
+
+    switch (state.ruleType) {
+      case "mon_batsu":
+        if (answerer.incorrectCount >= state.eliminateCount) {
+          answerer.isEliminated = true;
+          state.buzzes = state.buzzes.filter((b) => b.playerId !== answerer.id);
+        }
+        break;
+      case "mon_kyu":
+        answerer.suspendedUntilQuestion =
+          state.currentQuestionIndex + state.eliminateCount;
+        break;
+      case "nbn":
+        if (answerer.incorrectCount >= state.nbyN) {
+          answerer.isEliminated = true;
+          state.buzzes = state.buzzes.filter((b) => b.playerId !== answerer.id);
+        }
+        break;
+      case "points":
+        answerer.score -= state.subtractPoints;
+        if (
+          state.eliminatePoints !== null &&
+          answerer.score <= state.eliminatePoints
+        ) {
+          answerer.isEliminated = true;
+          state.buzzes = state.buzzes.filter((b) => b.playerId !== answerer.id);
+        }
+        break;
+    }
+
+    this.applyTransitionOnIncorrect(state);
   }
 
   private async handleMessage(
@@ -144,6 +238,9 @@ export class QuizRoom extends Server<Env> {
           const [oldId, oldPlayer] = oldEntry;
           delete state.players[oldId];
           state.buzzes = state.buzzes.map((b) =>
+            b.playerId === oldId ? { ...b, playerId: connection.id } : b,
+          );
+          state.lastBuzzes = state.lastBuzzes.map((b) =>
             b.playerId === oldId ? { ...b, playerId: connection.id } : b,
           );
           state.players[connection.id] = { ...oldPlayer, id: connection.id };
@@ -167,7 +264,9 @@ export class QuizRoom extends Server<Env> {
         if (state.phase !== "question" && state.phase !== "buzzed") return;
         const player = state.players[connection.id];
         if (!player || player.isEliminated || player.hasWon) return;
+        if (this.isSuspended(player, state.currentQuestionIndex)) return;
         if (state.buzzes.some((b) => b.playerId === connection.id)) return;
+
         const entry: BuzzEntry = { playerId: connection.id, buzzedAt: Date.now() };
         state.buzzes.push(entry);
         if (state.phase === "question") state.phase = "buzzed";
@@ -185,8 +284,9 @@ export class QuizRoom extends Server<Env> {
 
       case "start_question": {
         if (connection.id !== state.hostId) return;
-        state.phase = "question";
+        state.lastBuzzes = [...state.buzzes];
         state.buzzes = [];
+        state.phase = "question";
         state.currentQuestionIndex += 1;
         await this.saveState(state);
         this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
@@ -197,34 +297,13 @@ export class QuizRoom extends Server<Env> {
         if (connection.id !== state.hostId || state.phase !== "buzzed") return;
         const first = state.buzzes[0];
         if (!first) return;
-        const answerer = first.playerId;
-        const answererPlayer = state.players[answerer];
-        if (!answererPlayer) return;
+        const answerer = state.players[first.playerId];
+        if (!answerer) return;
 
         if (msg.correct) {
-          answererPlayer.correctCount += 1;
-          answererPlayer.score = answererPlayer.correctCount;
-
-          if (
-            state.ruleType === "mon_batsu" &&
-            answererPlayer.correctCount >= state.winCount
-          ) {
-            answererPlayer.hasWon = true;
-          }
-          state.phase = "result";
+          this.applyCorrectJudge(state, answerer);
         } else {
-          answererPlayer.incorrectCount += 1;
-
-          if (
-            state.ruleType === "mon_batsu" &&
-            answererPlayer.incorrectCount >= state.eliminateCount
-          ) {
-            answererPlayer.isEliminated = true;
-            // 失格者のバズをリストから除去
-            state.buzzes = state.buzzes.filter((b) => b.playerId !== answerer);
-          }
-
-          this.applyTransitionOnIncorrect(state);
+          this.applyIncorrectJudge(state, answerer);
         }
 
         await this.saveState(state);
@@ -232,9 +311,9 @@ export class QuizRoom extends Server<Env> {
           JSON.stringify({
             type: "judge_result",
             correct: msg.correct,
-            playerId: answerer,
+            playerId: answerer.id,
             scores: Object.fromEntries(
-              Object.entries(state.players).map(([id, p]) => [id, p.correctCount]),
+              Object.entries(state.players).map(([id, p]) => [id, p.score]),
             ),
           } satisfies ServerMessage),
         );
@@ -244,8 +323,9 @@ export class QuizRoom extends Server<Env> {
 
       case "next_question": {
         if (connection.id !== state.hostId) return;
-        state.phase = "waiting";
+        state.lastBuzzes = [...state.buzzes];
         state.buzzes = [];
+        state.phase = "waiting";
         await this.saveState(state);
         this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
         break;
@@ -259,7 +339,7 @@ export class QuizRoom extends Server<Env> {
           JSON.stringify({
             type: "game_finished",
             scores: Object.fromEntries(
-              Object.entries(state.players).map(([id, p]) => [id, p.correctCount]),
+              Object.entries(state.players).map(([id, p]) => [id, p.score]),
             ),
           } satisfies ServerMessage),
         );
@@ -275,12 +355,48 @@ export class QuizRoom extends Server<Env> {
         break;
       }
 
+      case "start_game": {
+        if (connection.id !== state.hostId || state.phase !== "lobby") return;
+        state.phase = "waiting";
+        state.currentQuestionIndex = 0;
+        await this.saveState(state);
+        this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
+        break;
+      }
+
+      case "restart_game": {
+        if (connection.id !== state.hostId || state.phase !== "finished") return;
+        // プレイヤーのスコアをリセットしてロビーへ
+        for (const p of Object.values(state.players)) {
+          p.score = 0;
+          p.correctCount = 0;
+          p.incorrectCount = 0;
+          p.isEliminated = false;
+          p.hasWon = false;
+          p.suspendedUntilQuestion = 0;
+        }
+        state.phase = "lobby";
+        state.currentQuestionIndex = 0;
+        state.buzzes = [];
+        state.lastBuzzes = [];
+        await this.saveState(state);
+        this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
+        break;
+      }
+
       case "set_rule": {
-        if (connection.id !== state.hostId) return;
+        // ゲーム開始後はルール変更不可
+        if (connection.id !== state.hostId || state.phase !== "lobby") return;
         if (msg.ruleType != null) state.ruleType = msg.ruleType;
+        if (msg.answerTransition != null) state.answerTransition = msg.answerTransition;
         if (msg.winCount != null) state.winCount = msg.winCount;
         if (msg.eliminateCount != null) state.eliminateCount = msg.eliminateCount;
-        if (msg.answerTransition != null) state.answerTransition = msg.answerTransition;
+        if (msg.nbyN != null) state.nbyN = msg.nbyN;
+        if (msg.addPoints != null) state.addPoints = msg.addPoints;
+        if (msg.subtractPoints != null) state.subtractPoints = msg.subtractPoints;
+        if (msg.winPoints != null) state.winPoints = msg.winPoints;
+        if ("eliminatePoints" in msg) state.eliminatePoints = msg.eliminatePoints ?? null;
+        if (msg.nonBuzzerPoints != null) state.nonBuzzerPoints = msg.nonBuzzerPoints;
         await this.saveState(state);
         this.broadcast(JSON.stringify({ type: "room_state", state } satisfies ServerMessage));
         break;

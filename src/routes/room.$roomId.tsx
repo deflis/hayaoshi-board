@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuizRoom } from "../hooks/useQuizRoom";
+import { LobbyPhase } from "../components/room/LobbyPhase";
 import { WaitingRoom } from "../components/room/WaitingRoom";
 import { QuestionPhase } from "../components/room/QuestionPhase";
 import { BuzzedPhase } from "../components/room/BuzzedPhase";
@@ -51,6 +52,9 @@ function RoomPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-6 flex gap-6">
         <main className="flex-1 min-w-0">
+          {roomState.phase === "lobby" && (
+            <LobbyPhase state={roomState} roomId={roomId} isHost={isHost} send={sendMessage} />
+          )}
           {roomState.phase === "waiting" && (
             <WaitingRoom state={roomState} roomId={roomId} />
           )}
@@ -74,7 +78,7 @@ function RoomPage() {
             <ResultPhase state={roomState} />
           )}
           {roomState.phase === "finished" && (
-            <FinishedPhase players={players} />
+            <FinishedPhase players={players} state={roomState} isHost={isHost} send={sendMessage} />
           )}
         </main>
 

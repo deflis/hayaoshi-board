@@ -1,14 +1,13 @@
 export type PlayerId = string;
 export type PlayerRole = "host" | "player";
 
-export type RuleType = "simple" | "mon_batsu";
+export type RuleType = "simple" | "mon_batsu" | "mon_kyu" | "nbn" | "points";
 
-// 誤答後の回答権の遷移ルール
 export type AnswerTransitionRule =
-  | "single_chance"   // 誰かが誤答 → その問題終了
-  | "endless_chance"  // 誤答 → バズリセットして再受付
-  | "second_chance"   // 1人目誤答 → 2人目のみ回答可、それ以降は終了
-  | "all_order";      // 押した全員に順番に回答機会（デフォルト）
+  | "single_chance"
+  | "endless_chance"
+  | "second_chance"
+  | "all_order";
 
 export interface Player {
   id: PlayerId;
@@ -19,10 +18,12 @@ export interface Player {
   incorrectCount: number;
   isEliminated: boolean;
   hasWon: boolean;
+  suspendedUntilQuestion: number; // m○n休: 何問目まで休みか（0=停止なし）
 }
 
 export type RoomPhase =
-  | "waiting"
+  | "lobby"     // 参加待ち・ルール設定
+  | "waiting"   // 問題と問題の間
   | "question"
   | "buzzed"
   | "result"
@@ -41,11 +42,21 @@ export interface RoomState {
   currentQuestionIndex: number;
   totalQuestions: number;
   buzzes: BuzzEntry[];
+  lastBuzzes: BuzzEntry[]; // 前の問題のバズ着順（振り返り用）
   // ルール設定
   ruleType: RuleType;
-  winCount: number;         // m○n× の m（勝ち抜け正解数）
-  eliminateCount: number;   // m○n× の n（失格誤答数）
   answerTransition: AnswerTransitionRule;
+  // m○n× / m○n休
+  winCount: number;
+  eliminateCount: number; // m○n×: 失格誤答数 / m○n休: 何問休み
+  // NbyN
+  nbyN: number;
+  // +N/-M
+  addPoints: number;
+  subtractPoints: number;
+  winPoints: number;
+  eliminatePoints: number | null; // null = 失格なし
+  nonBuzzerPoints: number;        // 0 = 無効
 }
 
 export type ClientMessage =
@@ -55,13 +66,21 @@ export type ClientMessage =
   | { type: "judge"; correct: boolean }
   | { type: "next_question" }
   | { type: "finish_game" }
+  | { type: "start_game" }
+  | { type: "restart_game" }
   | { type: "set_total_questions"; total: number }
   | {
       type: "set_rule";
       ruleType?: RuleType;
+      answerTransition?: AnswerTransitionRule;
       winCount?: number;
       eliminateCount?: number;
-      answerTransition?: AnswerTransitionRule;
+      nbyN?: number;
+      addPoints?: number;
+      subtractPoints?: number;
+      winPoints?: number;
+      eliminatePoints?: number | null;
+      nonBuzzerPoints?: number;
     };
 
 export type ServerMessage =

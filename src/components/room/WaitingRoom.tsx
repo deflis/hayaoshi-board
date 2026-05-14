@@ -1,4 +1,5 @@
 import { PlayerList } from "./PlayerList";
+import { LastBuzzRanking } from "./LastBuzzRanking";
 import type { RoomState } from "../../party/types";
 
 interface Props {
@@ -39,6 +40,14 @@ export function WaitingRoom({ state, roomId }: Props) {
           hostId={state.hostId}
         />
       </div>
+
+      {state.lastBuzzes.length > 0 && (
+        <LastBuzzRanking
+          buzzes={state.lastBuzzes}
+          players={state.players}
+          label="前の問題の着順"
+        />
+      )}
 
       <p className="text-gray-500 text-sm text-center">
         ホストが問題を開始するまでお待ちください

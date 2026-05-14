@@ -17,8 +17,111 @@ const TRANSITION_LABELS: Record<AnswerTransitionRule, string> = {
   all_order: "全順回答",
 };
 
+const RULE_LABELS: Record<RuleType, string> = {
+  simple: "シンプル",
+  mon_batsu: "m○n×",
+  mon_kyu: "m○n休",
+  nbn: "NbyN",
+  points: "+N/-M",
+};
+
+function RuleSettings({ state, send }: Props) {
+  const s = state;
+  switch (s.ruleType) {
+    case "mon_batsu":
+      return (
+        <div className="flex gap-2 text-xs">
+          <label className="flex items-center gap-1 text-gray-400">
+            <span className="text-green-400">○</span>
+            <input type="number" min={1} max={99} value={s.winCount}
+              onChange={(e) => send({ type: "set_rule", winCount: Number(e.target.value) })}
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+          </label>
+          <label className="flex items-center gap-1 text-gray-400">
+            <span className="text-red-400">×</span>
+            <input type="number" min={1} max={99} value={s.eliminateCount}
+              onChange={(e) => send({ type: "set_rule", eliminateCount: Number(e.target.value) })}
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+          </label>
+        </div>
+      );
+    case "mon_kyu":
+      return (
+        <div className="flex gap-2 text-xs">
+          <label className="flex items-center gap-1 text-gray-400">
+            <span className="text-green-400">○</span>
+            <input type="number" min={1} max={99} value={s.winCount}
+              onChange={(e) => send({ type: "set_rule", winCount: Number(e.target.value) })}
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+          </label>
+          <label className="flex items-center gap-1 text-gray-400">
+            <span className="text-yellow-400">休</span>
+            <input type="number" min={1} max={99} value={s.eliminateCount}
+              onChange={(e) => send({ type: "set_rule", eliminateCount: Number(e.target.value) })}
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+          </label>
+        </div>
+      );
+    case "nbn":
+      return (
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <span>N =</span>
+          <input type="number" min={1} max={99} value={s.nbyN}
+            onChange={(e) => send({ type: "set_rule", nbyN: Number(e.target.value) })}
+            className="w-16 bg-gray-700 text-white rounded px-2 py-1" />
+        </div>
+      );
+    case "points":
+      return (
+        <div className="space-y-2 text-xs text-gray-400">
+          <div className="flex gap-2">
+            <label className="flex items-center gap-1">
+              <span className="text-green-400">+</span>
+              <input type="number" min={0} max={99} value={s.addPoints}
+                onChange={(e) => send({ type: "set_rule", addPoints: Number(e.target.value) })}
+                className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-red-400">-</span>
+              <input type="number" min={0} max={99} value={s.subtractPoints}
+                onChange={(e) => send({ type: "set_rule", subtractPoints: Number(e.target.value) })}
+                className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+            </label>
+          </div>
+          <label className="flex items-center gap-1">
+            勝抜
+            <input type="number" min={1} max={999} value={s.winPoints}
+              onChange={(e) => send({ type: "set_rule", winPoints: Number(e.target.value) })}
+              className="w-16 bg-gray-700 text-white rounded px-2 py-1" />
+            pt
+          </label>
+          <label className="flex items-center gap-1">
+            失格
+            <input type="number" max={0} value={s.eliminatePoints ?? ""}
+              placeholder="なし"
+              onChange={(e) => send({
+                type: "set_rule",
+                eliminatePoints: e.target.value === "" ? null : Number(e.target.value),
+              })}
+              className="w-16 bg-gray-700 text-white rounded px-2 py-1" />
+            pt以下
+          </label>
+          <label className="flex items-center gap-1">
+            未押下正解
+            <input type="number" min={0} max={99} value={s.nonBuzzerPoints}
+              onChange={(e) => send({ type: "set_rule", nonBuzzerPoints: Number(e.target.value) })}
+              className="w-12 bg-gray-700 text-white rounded px-2 py-1" />
+            pt
+          </label>
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
 export function HostControls({ state, send }: Props) {
-  const { phase, totalQuestions, currentQuestionIndex, buzzes, players } = state;
+  const { phase, buzzes, players } = state;
   const currentAnswerer = buzzes[0] ? players[buzzes[0].playerId] : null;
   const isMonBatsu = state.ruleType === "mon_batsu";
 
@@ -26,91 +129,59 @@ export function HostControls({ state, send }: Props) {
     <div className="bg-gray-800 rounded-xl p-4 space-y-3">
       <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wide">ホスト操作</h3>
 
-      {/* ルール設定（waiting フェーズのみ） */}
-      {phase === "waiting" && (
+      {phase === "lobby" && (
         <div className="space-y-2 pb-3 border-b border-gray-700">
           <p className="text-xs text-gray-400 font-bold">ルール設定</p>
-
-          <div className="flex gap-1">
-            {(["simple", "mon_batsu"] as RuleType[]).map((r) => (
-              <button
-                key={r}
-                type="button"
+          <div className="grid grid-cols-2 gap-1">
+            {(Object.keys(RULE_LABELS) as RuleType[]).map((r) => (
+              <button key={r} type="button"
                 onClick={() => send({ type: "set_rule", ruleType: r })}
-                className={`flex-1 text-xs py-1 rounded transition-colors ${
+                className={`text-xs py-1 rounded transition-colors ${
                   state.ruleType === r
                     ? "bg-blue-600 text-white"
                     : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 }`}
               >
-                {r === "simple" ? "シンプル" : "m○n×"}
+                {RULE_LABELS[r]}
               </button>
             ))}
           </div>
-
-          {isMonBatsu && (
-            <div className="flex gap-2 text-xs">
-              <label className="flex items-center gap-1 text-gray-400">
-                <span className="text-green-400">○</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={state.winCount}
-                  onChange={(e) =>
-                    send({ type: "set_rule", winCount: Number(e.target.value) })
-                  }
-                  className="w-12 bg-gray-700 text-white rounded px-2 py-1"
-                />
-              </label>
-              <label className="flex items-center gap-1 text-gray-400">
-                <span className="text-red-400">×</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={state.eliminateCount}
-                  onChange={(e) =>
-                    send({ type: "set_rule", eliminateCount: Number(e.target.value) })
-                  }
-                  className="w-12 bg-gray-700 text-white rounded px-2 py-1"
-                />
-              </label>
-            </div>
-          )}
-
-          <select
-            value={state.answerTransition}
-            onChange={(e) =>
-              send({
-                type: "set_rule",
-                answerTransition: e.target.value as AnswerTransitionRule,
-              })
-            }
+          <RuleSettings state={state} send={send} />
+          <select value={state.answerTransition}
+            onChange={(e) => send({ type: "set_rule", answerTransition: e.target.value as AnswerTransitionRule })}
             className="w-full bg-gray-700 text-white text-xs rounded px-2 py-1"
           >
-            {Object.entries(TRANSITION_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
+            {Object.entries(TRANSITION_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
             ))}
           </select>
+          <button type="button"
+            onClick={() => send({ type: "start_game" })}
+            className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-lg transition-colors"
+          >
+            ゲームスタート
+          </button>
         </div>
       )}
 
       {(phase === "waiting" || phase === "result") && (
-        <button
-          type="button"
-          onClick={() => send({ type: "start_question" })}
-          className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-        >
-          問題開始 ({currentQuestionIndex + 1}問目)
-        </button>
+        <>
+          <button type="button"
+            onClick={() => send({ type: "start_question" })}
+            className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            問題開始 ({state.currentQuestionIndex + 1}問目)
+          </button>
+          <p className="text-xs text-gray-500 text-center">
+            {state.ruleType !== "simple" && (
+              <span>ルール: {RULE_LABELS[state.ruleType]}</span>
+            )}
+          </p>
+        </>
       )}
 
       {phase === "result" && (
-        <button
-          type="button"
+        <button type="button"
           onClick={() => send({ type: "next_question" })}
           className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
         >
@@ -125,23 +196,20 @@ export function HostControls({ state, send }: Props) {
       {phase === "buzzed" && currentAnswerer && (
         <div className="space-y-2">
           <p className="text-xs text-gray-400 text-center">
-            判定対象:{" "}
-            <span className="text-yellow-400 font-bold">{currentAnswerer.name}</span>
+            判定対象: <span className="text-yellow-400 font-bold">{currentAnswerer.name}</span>
             {buzzes.length > 1 && (
               <span className="ml-1 text-gray-500">（あと{buzzes.length - 1}人）</span>
             )}
           </p>
-          <button
-            type="button"
+          <button type="button"
             onClick={() => send({ type: "judge", correct: true })}
             className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
           >
             {isMonBatsu
               ? `正解 ○${currentAnswerer.correctCount + 1}`
-              : "正解 +1pt"}
+              : "正解"}
           </button>
-          <button
-            type="button"
+          <button type="button"
             onClick={() => send({ type: "judge", correct: false })}
             className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
           >
@@ -149,32 +217,13 @@ export function HostControls({ state, send }: Props) {
               ? `不正解 ×${currentAnswerer.incorrectCount + 1}${
                   currentAnswerer.incorrectCount + 1 >= state.eliminateCount ? "（失格）" : ""
                 }`
-              : buzzes.length > 1
-                ? "不正解（次の人へ）"
-                : "不正解（早押し再受付）"}
+              : "不正解"}
           </button>
         </div>
       )}
 
-      {!isMonBatsu && (
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-700">
-          <label className="text-xs text-gray-400">総問数:</label>
-          <input
-            type="number"
-            min={1}
-            max={99}
-            value={totalQuestions}
-            onChange={(e) =>
-              send({ type: "set_total_questions", total: Number(e.target.value) })
-            }
-            className="w-16 bg-gray-700 text-white text-sm rounded px-2 py-1"
-          />
-        </div>
-      )}
-
       {(phase === "waiting" || phase === "result") && (
-        <button
-          type="button"
+        <button type="button"
           onClick={() => send({ type: "finish_game" })}
           className="w-full bg-gray-600 hover:bg-gray-500 text-white text-sm py-1 px-4 rounded-lg transition-colors"
         >
