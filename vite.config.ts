@@ -6,17 +6,17 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const config = defineConfig(({ mode }) => ({
-	resolve: { tsconfigPaths: true },
-	test: {
-		passWithNoTests: true,
-	},
-	plugins: [
-		devtools(),
-		mode !== "test" && cloudflare({ viteEnvironment: { name: "ssr" } }),
-		tailwindcss(),
-		tanstackStart(),
-		viteReact(),
-	],
+  resolve: { tsconfigPaths: true },
+  test: {
+    passWithNoTests: true,
+  },
+  plugins: [
+    devtools(),
+    mode !== "test" && cloudflare({ viteEnvironment: { name: "ssr" } }),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ],
 }));
 
 export default config;
