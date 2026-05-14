@@ -32,10 +32,14 @@ function Home() {
 
 				<form onSubmit={handleCreate} className="space-y-4">
 					<div>
-						<label className="block text-sm text-gray-400 mb-1">
+						<label
+							htmlFor="player-name"
+							className="block text-sm text-gray-400 mb-1"
+						>
 							プレイヤー名
 						</label>
 						<input
+							id="player-name"
 							type="text"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
@@ -46,10 +50,14 @@ function Home() {
 					</div>
 
 					<div>
-						<label className="block text-sm text-gray-400 mb-1">
+						<label
+							htmlFor="room-id"
+							className="block text-sm text-gray-400 mb-1"
+						>
 							ルームID（空欄で自動生成）
 						</label>
 						<input
+							id="room-id"
 							type="text"
 							value={roomId}
 							onChange={(e) => setRoomId(e.target.value)}

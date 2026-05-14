@@ -1,5 +1,5 @@
-import { PlayerList } from "./PlayerList";
 import type { ClientMessage, RoomState } from "../../party/types";
+import { PlayerList } from "./PlayerList";
 
 interface Props {
 	state: RoomState;
