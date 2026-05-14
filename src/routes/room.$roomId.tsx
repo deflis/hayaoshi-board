@@ -103,6 +103,8 @@ function RoomPage() {
 						players={players}
 						hostId={roomState.hostId}
 						state={roomState}
+						isHost={isHost}
+						send={sendMessage}
 					/>
 					{isHost && <HostControls state={roomState} send={sendMessage} />}
 					<HostRoleControls

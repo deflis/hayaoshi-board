@@ -83,6 +83,13 @@ export type ClientMessage =
 	| { type: "restart_game" }
 	| { type: "set_total_questions"; total: number }
 	| {
+			type: "set_player_stats";
+			playerId: PlayerId;
+			score?: number;
+			correctCount?: number;
+			incorrectCount?: number;
+	  }
+	| {
 			type: "set_rule";
 			ruleType?: RuleType;
 			answerTransition?: AnswerTransitionRule;

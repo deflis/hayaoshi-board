@@ -215,6 +215,41 @@ export class QuizRoom extends Server<Env> {
 		}
 	}
 
+	private clampInteger(value: number, min: number, max: number): number {
+		if (!Number.isFinite(value)) return min;
+		return Math.min(max, Math.max(min, Math.trunc(value)));
+	}
+
+	private refreshPlayerOutcome(state: RoomState, player: Player): void {
+		player.hasWon = false;
+		player.isEliminated = false;
+
+		switch (state.ruleType) {
+			case "mon_batsu":
+				player.score = player.correctCount;
+				player.hasWon = player.correctCount >= state.winCount;
+				player.isEliminated = player.incorrectCount >= state.eliminateCount;
+				break;
+			case "mon_kyu":
+				player.score = player.correctCount;
+				player.hasWon = player.correctCount >= state.winCount;
+				break;
+			case "nbn":
+				player.score = player.correctCount;
+				player.hasWon =
+					player.correctCount >= state.nbyN &&
+					player.incorrectCount < state.nbyN;
+				player.isEliminated = player.incorrectCount >= state.nbyN;
+				break;
+			case "points":
+				player.hasWon = player.score >= state.winPoints;
+				player.isEliminated =
+					state.eliminatePoints !== null &&
+					player.score <= state.eliminatePoints;
+				break;
+		}
+	}
+
 	// 誤答後の遷移。buzzes を保存してから遷移する
 	private applyTransitionOnIncorrect(state: RoomState): void {
 		switch (state.answerTransition) {
@@ -575,6 +610,30 @@ export class QuizRoom extends Server<Env> {
 				const playerId = this.getPlayerId(connection);
 				if (playerId !== state.hostId) return;
 				state.totalQuestions = msg.total;
+				await this.saveState(state);
+				this.broadcast(
+					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
+				);
+				break;
+			}
+
+			case "set_player_stats": {
+				const playerId = this.getPlayerId(connection);
+				if (playerId !== state.hostId) return;
+				const target = state.players[msg.playerId];
+				if (!target) return;
+
+				if (msg.score != null) {
+					target.score = this.clampInteger(msg.score, -9999, 9999);
+				}
+				if (msg.correctCount != null) {
+					target.correctCount = this.clampInteger(msg.correctCount, 0, 999);
+				}
+				if (msg.incorrectCount != null) {
+					target.incorrectCount = this.clampInteger(msg.incorrectCount, 0, 999);
+				}
+
+				this.refreshPlayerOutcome(state, target);
 				await this.saveState(state);
 				this.broadcast(
 					JSON.stringify({ type: "room_state", state } satisfies ServerMessage),
