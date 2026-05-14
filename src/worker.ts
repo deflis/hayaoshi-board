@@ -2,27 +2,18 @@ import {
   createStartHandler,
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
-import { routePartykitRequest } from "partyserver";
+import { Hono } from "hono";
+import { partyserverMiddleware } from "hono-party";
 import { apiApp } from "./api";
 
 export { QuizRoom } from "./party/quiz-room";
 
-const handler = createStartHandler(defaultStreamHandler);
+const startHandler = createStartHandler(defaultStreamHandler);
 
-export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
-    const partyResponse = await routePartykitRequest(request, env);
-    if (partyResponse) return partyResponse;
+const app = new Hono<{ Bindings: Env }>();
 
-    const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/")) {
-      return apiApp.fetch(request, env, ctx);
-    }
+app.use("*", partyserverMiddleware());
+app.route("/", apiApp);
+app.all("*", (c) => startHandler(c.req.raw));
 
-    return handler(request);
-  },
-};
+export default app;
