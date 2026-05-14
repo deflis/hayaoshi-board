@@ -1,6 +1,9 @@
-import type { Player, RoomState } from "../types";
+import type { Player, QuizContext } from "../types";
 
-export function applyCorrectMonBatsu(state: RoomState, answerer: Player): void {
+export function applyCorrectMonBatsu(
+  state: QuizContext,
+  answerer: Player,
+): void {
   answerer.correctCount += 1;
   answerer.score = answerer.correctCount;
   if (answerer.correctCount >= state.winCount) {
@@ -9,7 +12,7 @@ export function applyCorrectMonBatsu(state: RoomState, answerer: Player): void {
 }
 
 export function applyIncorrectMonBatsu(
-  state: RoomState,
+  state: QuizContext,
   answerer: Player,
 ): void {
   answerer.incorrectCount += 1;
@@ -19,7 +22,7 @@ export function applyIncorrectMonBatsu(
   }
 }
 
-export function refreshMonBatsu(state: RoomState, player: Player): void {
+export function refreshMonBatsu(state: QuizContext, player: Player): void {
   player.score = player.correctCount;
   player.hasWon = player.correctCount >= state.winCount;
   player.isEliminated = player.incorrectCount >= state.eliminateCount;

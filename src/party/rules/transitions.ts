@@ -1,6 +1,6 @@
-import type { RoomState } from "../types";
+import type { QuizContext } from "../types";
 
-export function applyTransitionOnIncorrect(state: RoomState): void {
+export function applyTransitionOnIncorrect(state: QuizContext): void {
   switch (state.answerTransition) {
     case "single_chance": {
       state.lastBuzzes = [...state.buzzes];

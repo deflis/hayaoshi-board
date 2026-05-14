@@ -1,4 +1,4 @@
-import type { Player, RoomState } from "../types";
+import type { Player, QuizContext } from "../types";
 import {
   applyCorrectMonBatsu,
   applyIncorrectMonBatsu,
@@ -17,7 +17,7 @@ import {
 } from "./points";
 import { applyCorrectSimple, applyIncorrectSimple } from "./simple";
 
-export function applyCorrectByRule(state: RoomState, player: Player): void {
+export function applyCorrectByRule(state: QuizContext, player: Player): void {
   switch (state.ruleType) {
     case "simple":
       applyCorrectSimple(state, player);
@@ -37,7 +37,7 @@ export function applyCorrectByRule(state: RoomState, player: Player): void {
   }
 }
 
-export function applyIncorrectByRule(state: RoomState, player: Player): void {
+export function applyIncorrectByRule(state: QuizContext, player: Player): void {
   switch (state.ruleType) {
     case "simple":
       applyIncorrectSimple(state, player);
@@ -57,7 +57,7 @@ export function applyIncorrectByRule(state: RoomState, player: Player): void {
   }
 }
 
-export function refreshOutcomeByRule(state: RoomState, player: Player): void {
+export function refreshOutcomeByRule(state: QuizContext, player: Player): void {
   player.hasWon = false;
   player.isEliminated = false;
   switch (state.ruleType) {

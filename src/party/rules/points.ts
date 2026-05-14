@@ -1,6 +1,6 @@
-import type { Player, RoomState } from "../types";
+import type { Player, QuizContext } from "../types";
 
-export function applyCorrectPoints(state: RoomState, answerer: Player): void {
+export function applyCorrectPoints(state: QuizContext, answerer: Player): void {
   answerer.correctCount += 1;
   answerer.score += state.addPoints;
   if (state.nonBuzzerPoints > 0) {
@@ -16,7 +16,10 @@ export function applyCorrectPoints(state: RoomState, answerer: Player): void {
   }
 }
 
-export function applyIncorrectPoints(state: RoomState, answerer: Player): void {
+export function applyIncorrectPoints(
+  state: QuizContext,
+  answerer: Player,
+): void {
   answerer.incorrectCount += 1;
   answerer.score -= state.subtractPoints;
   if (
@@ -28,7 +31,7 @@ export function applyIncorrectPoints(state: RoomState, answerer: Player): void {
   }
 }
 
-export function refreshPoints(state: RoomState, player: Player): void {
+export function refreshPoints(state: QuizContext, player: Player): void {
   player.hasWon = player.score >= state.winPoints;
   player.isEliminated =
     state.eliminatePoints !== null && player.score <= state.eliminatePoints;
