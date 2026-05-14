@@ -558,8 +558,7 @@ export class QuizRoom extends Server<Env> {
         } else {
           state.lastBuzzes = [...state.buzzes];
           state.buzzes = [];
-          state.phase = "question";
-          state.currentQuestionIndex += 1;
+          state.phase = "waiting";
         }
 
         await this.saveState(state);
