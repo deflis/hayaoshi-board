@@ -304,7 +304,9 @@ export function HostControls({ state, send }: Props) {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("ゲームを終了しますか？スコアは保持されます。")) {
+              if (
+                window.confirm("ゲームを終了しますか？スコアは保持されます。")
+              ) {
                 send({ type: "finish_game" });
               }
             }}
@@ -381,7 +383,6 @@ export function HostControls({ state, send }: Props) {
         </div>
       )}
 
-
       {(phase === "waiting" || phase === "result") && (
         <button
           type="button"
@@ -391,8 +392,6 @@ export function HostControls({ state, send }: Props) {
           ゲーム終了
         </button>
       )}
-
-
     </div>
   );
 }

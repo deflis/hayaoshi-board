@@ -365,7 +365,17 @@ describe("quizRoomMachine", () => {
     const ctx = makeContext({
       hostId: "p1",
       players: {
-        p1: { id: "p1", name: "A", score: 5, role: "host", correctCount: 3, incorrectCount: 1, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
+        p1: {
+          id: "p1",
+          name: "A",
+          score: 5,
+          role: "host",
+          correctCount: 3,
+          incorrectCount: 1,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
       },
     });
     const actor = createAndStartActor(ctx);
@@ -373,7 +383,8 @@ describe("quizRoomMachine", () => {
     expect(actor.getSnapshot().value).toBe("waiting");
     actor.send({ type: "FINISH_GAME", playerId: "p1" });
     expect(actor.getSnapshot().value).toBe("finished");
-    const questionIndexBefore = actor.getSnapshot().context.currentQuestionIndex;
+    const questionIndexBefore =
+      actor.getSnapshot().context.currentQuestionIndex;
     actor.send({ type: "RESUME_GAME", playerId: "p1" });
     const snap = actor.getSnapshot();
     expect(snap.value).toBe("waiting");
@@ -387,8 +398,28 @@ describe("quizRoomMachine", () => {
     const ctx = makeContext({
       hostId: "p1",
       players: {
-        p1: { id: "p1", name: "A", score: 5, role: "host", correctCount: 0, incorrectCount: 0, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
-        p2: { id: "p2", name: "B", score: 0, role: "player", correctCount: 0, incorrectCount: 0, isEliminated: false, hasWon: false, suspendedUntilQuestion: 0 },
+        p1: {
+          id: "p1",
+          name: "A",
+          score: 5,
+          role: "host",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
+        p2: {
+          id: "p2",
+          name: "B",
+          score: 0,
+          role: "player",
+          correctCount: 0,
+          incorrectCount: 0,
+          isEliminated: false,
+          hasWon: false,
+          suspendedUntilQuestion: 0,
+        },
       },
     });
     const actor = createAndStartActor(ctx);
