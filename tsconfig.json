@@ -12,7 +12,8 @@
     "types": [
         "./worker-configuration.d.ts",
         "node",
-        "vite/client"
+        "vite/client",
+        "bun"
     ],
 
     /* Bundler mode */

@@ -5,18 +5,15 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-const config = defineConfig(({ mode }) => ({
+const config = defineConfig({
   resolve: { tsconfigPaths: true },
-  test: {
-    passWithNoTests: true,
-  },
   plugins: [
     devtools(),
-    mode !== "test" && cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     tanstackStart(),
     viteReact(),
   ],
-}));
+});
 
 export default config;
