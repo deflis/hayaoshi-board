@@ -17,6 +17,7 @@ const ROOM_STATE_MAP_KEY = "state";
 const CHAT_MESSAGES_ARRAY_KEY = "chatMessages";
 const MAX_CHAT_MESSAGES = 100;
 const MAX_CHAT_TEXT_LENGTH = 300;
+const EMPTY_ROOM_CLEANUP_DELAY_MS = 5 * 60 * 1000;
 
 interface ConnectionSession {
 	playerId: PlayerId;
@@ -30,6 +31,7 @@ export class QuizRoom extends Server<Env> {
 	}
 
 	async onConnect(connection: Connection<ConnectionSession>) {
+		await this.ctx.storage.deleteAlarm();
 		const state = await this.getState();
 		this.send(connection, { type: "room_state", state });
 	}
@@ -45,6 +47,12 @@ export class QuizRoom extends Server<Env> {
 
 	async onClose(connection: Connection<ConnectionSession>) {
 		await this.releaseHostForDisconnectedConnection(connection);
+		await this.scheduleCleanupIfEmpty();
+	}
+
+	async onAlarm() {
+		if (this.hasActiveConnections()) return;
+		await this.ctx.storage.deleteAll();
 	}
 
 	private initialState(): RoomState {
@@ -220,6 +228,18 @@ export class QuizRoom extends Server<Env> {
 			if (connection.state?.playerId === playerId) return true;
 		}
 		return false;
+	}
+
+	private hasActiveConnections(): boolean {
+		for (const _connection of this.getConnections()) {
+			return true;
+		}
+		return false;
+	}
+
+	private async scheduleCleanupIfEmpty(): Promise<void> {
+		if (this.hasActiveConnections()) return;
+		await this.ctx.storage.setAlarm(Date.now() + EMPTY_ROOM_CLEANUP_DELAY_MS);
 	}
 
 	private async releaseHostForDisconnectedConnection(
