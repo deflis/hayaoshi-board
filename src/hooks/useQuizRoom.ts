@@ -43,7 +43,7 @@ export function useQuizRoom(roomId: string, playerName: string) {
 		onOpen(event) {
 			// 再接続時も含め毎回 join を送り直す。myPlayerId は room_state で再特定する
 			setErrorMessage(null);
-			setMyPlayerId(sessionId);
+			setMyPlayerId(null);
 			(event.target as WebSocket).send(
 				JSON.stringify({
 					type: "join",
@@ -61,10 +61,7 @@ export function useQuizRoom(roomId: string, playerName: string) {
 				setMyPlayerId((prev) => {
 					if (prev && state.players[prev]) return prev;
 					if (state.players[sessionId]) return sessionId;
-					const found = Object.values(state.players).find(
-						(p) => p.name === playerNameRef.current,
-					);
-					return found?.id ?? null;
+					return null;
 				});
 				if (state.players[sessionId]) {
 					setErrorMessage(null);
@@ -77,9 +74,11 @@ export function useQuizRoom(roomId: string, playerName: string) {
 
 	const sendMessage = useCallback(
 		(msg: ClientMessage) => {
-			socket.send(JSON.stringify(msg));
+			socket.send(
+				JSON.stringify({ ...msg, sessionId } satisfies ClientMessage),
+			);
 		},
-		[socket],
+		[socket, sessionId],
 	);
 
 	const isHost = myPlayerId !== null && roomState?.hostId === myPlayerId;

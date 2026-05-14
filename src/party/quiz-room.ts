@@ -175,8 +175,9 @@ export class QuizRoom extends Server<Env> {
 
 	private getPlayerId(
 		connection: Connection<ConnectionSession>,
+		msg?: ClientMessage,
 	): PlayerId | null {
-		return connection.state?.playerId ?? null;
+		return connection.state?.playerId ?? msg?.sessionId ?? null;
 	}
 
 	private newPlayer(id: string, name: string, role: Player["role"]): Player {
@@ -406,7 +407,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "leave_host": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (!playerId || playerId !== state.hostId) return;
 				if (!this.canChangeHost(state)) {
 					this.send(connection, {
@@ -426,7 +427,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "claim_host": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (!playerId || !state.players[playerId]) return;
 				if (state.hostId) return;
 				if (!this.canChangeHost(state)) {
@@ -447,7 +448,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "send_chat": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (!playerId) return;
 				const player = state.players[playerId];
 				if (!player) return;
@@ -476,7 +477,7 @@ export class QuizRoom extends Server<Env> {
 
 			case "buzz": {
 				if (state.phase !== "question" && state.phase !== "buzzed") return;
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (!playerId) return;
 				const player = state.players[playerId];
 				if (!player || player.isEliminated || player.hasWon) return;
@@ -504,7 +505,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "start_question": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				state.lastBuzzes = [...state.buzzes];
 				state.buzzes = [];
@@ -518,7 +519,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "judge": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId || state.phase !== "buzzed") return;
 				const first = state.buzzes[0];
 				if (!first) return;
@@ -549,7 +550,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "through": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				if (state.phase !== "question" && state.phase !== "buzzed") return;
 
@@ -575,7 +576,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "next_question": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				state.lastBuzzes = [...state.buzzes];
 				state.buzzes = [];
@@ -588,7 +589,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "finish_game": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				state.phase = "finished";
 				await this.saveState(state);
@@ -607,7 +608,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "set_total_questions": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				state.totalQuestions = msg.total;
 				await this.saveState(state);
@@ -618,7 +619,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "set_player_stats": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId) return;
 				const target = state.players[msg.playerId];
 				if (!target) return;
@@ -642,7 +643,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "start_game": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId || state.phase !== "lobby") return;
 				state.phase = "waiting";
 				state.currentQuestionIndex = 0;
@@ -654,7 +655,7 @@ export class QuizRoom extends Server<Env> {
 			}
 
 			case "restart_game": {
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId || state.phase !== "finished") return;
 				// プレイヤーのスコアをリセットしてロビーへ
 				for (const p of Object.values(state.players)) {
@@ -678,7 +679,7 @@ export class QuizRoom extends Server<Env> {
 
 			case "set_rule": {
 				// ゲーム開始後はルール変更不可
-				const playerId = this.getPlayerId(connection);
+				const playerId = this.getPlayerId(connection, msg);
 				if (playerId !== state.hostId || state.phase !== "lobby") return;
 				if (msg.ruleType != null) state.ruleType = msg.ruleType;
 				if (msg.answerTransition != null)

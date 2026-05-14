@@ -68,7 +68,7 @@ export interface RoomState {
 	nonBuzzerPoints: number; // 0 = 無効
 }
 
-export type ClientMessage =
+export type ClientMessage = (
 	| { type: "join"; name: string; sessionId?: PlayerId }
 	| { type: "send_chat"; text: string }
 	| { type: "leave_host" }
@@ -101,7 +101,8 @@ export type ClientMessage =
 			winPoints?: number;
 			eliminatePoints?: number | null;
 			nonBuzzerPoints?: number;
-	  };
+	  }
+) & { sessionId?: PlayerId };
 
 export type ServerMessage =
 	| { type: "room_state"; state: RoomState }
