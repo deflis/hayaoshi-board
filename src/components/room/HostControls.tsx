@@ -342,13 +342,19 @@ export function HostControls({ state, send }: Props) {
 				</div>
 			)}
 
-			{(phase === "waiting" || phase === "result") && (
+			{phase !== "lobby" && phase !== "finished" && (
 				<button
 					type="button"
 					onClick={() => send({ type: "finish_game" })}
-					className="w-full bg-gray-600 hover:bg-gray-500 text-white text-sm py-1 px-4 rounded-lg transition-colors"
+					className={`w-full text-white text-sm py-1 px-4 rounded-lg transition-colors ${
+						phase === "question" || phase === "buzzed"
+							? "bg-red-700 hover:bg-red-600"
+							: "bg-gray-600 hover:bg-gray-500"
+					}`}
 				>
-					ゲーム終了
+					{phase === "question" || phase === "buzzed"
+						? "ゲームを途中終了"
+						: "ゲーム終了"}
 				</button>
 			)}
 		</div>
