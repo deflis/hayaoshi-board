@@ -26,7 +26,11 @@ function getOrCreateSessionId(roomId: string): string {
   return sessionId;
 }
 
-export function useQuizRoom(roomId: string, playerName: string) {
+export function useQuizRoom(
+  roomId: string,
+  playerName: string,
+  onServerMessage?: (msg: ServerMessage) => void,
+) {
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,6 +58,7 @@ export function useQuizRoom(roomId: string, playerName: string) {
     },
     onMessage(event: MessageEvent) {
       const msg = JSON.parse(event.data as string) as ServerMessage;
+      onServerMessage?.(msg);
       if (msg.type === "room_state") {
         const state = msg.state;
         setRoomState(state);

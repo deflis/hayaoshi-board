@@ -11,6 +11,7 @@ import { ResultPhase } from "../components/room/ResultPhase";
 import { Scoreboard } from "../components/room/Scoreboard";
 import { WaitingRoom } from "../components/room/WaitingRoom";
 import { useQuizRoom } from "../hooks/useQuizRoom";
+import { useSoundEffects } from "../hooks/useSoundEffects";
 
 export const Route = createFileRoute("/room/$roomId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -28,8 +29,9 @@ function RoomPage() {
 }
 
 function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
+  const onServerMessage = useSoundEffects();
   const { roomState, sendMessage, myPlayerId, isHost, errorMessage } =
-    useQuizRoom(roomId, name);
+    useQuizRoom(roomId, name, onServerMessage);
 
   if (!roomState) {
     return (
