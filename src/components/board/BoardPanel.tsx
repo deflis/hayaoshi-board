@@ -27,10 +27,10 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
   }
 
   return (
-    <section className="bg-gray-800 rounded-xl p-4 flex flex-col gap-3">
+    <section className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold text-white">ボード</h2>
-        <span className="text-xs text-gray-500">
+        <h2 className="text-lg font-bold text-gray-900">ボード</h2>
+        <span className="text-xs text-gray-400">
           {board.status === "closed" && "非アクティブ"}
           {board.status === "answering" && "回答受付中"}
           {board.status === "revealed" && "公開中"}
@@ -43,7 +43,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
             <button
               type="button"
               onClick={() => send({ type: "open_board" })}
-              className="text-xs bg-green-700 hover:bg-green-600 text-white px-2 py-1 rounded transition-colors"
+              className="text-xs bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded transition-colors"
             >
               開く
             </button>
@@ -53,14 +53,14 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
               <button
                 type="button"
                 onClick={() => send({ type: "reveal_board_answers" })}
-                className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded transition-colors"
+                className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition-colors"
               >
                 公開
               </button>
               <button
                 type="button"
                 onClick={() => send({ type: "close_board" })}
-                className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition-colors"
+                className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
               >
                 締切
               </button>
@@ -71,7 +71,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
               <button
                 type="button"
                 onClick={() => send({ type: "hide_board_answers" })}
-                className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2 py-1 rounded transition-colors"
+                className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
               >
                 非公開に戻す
               </button>
@@ -87,7 +87,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
                     send({ type: "apply_board_scores" });
                   }
                 }}
-                className="text-xs bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white px-2 py-1 rounded transition-colors"
+                className="text-xs bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-white px-2 py-1 rounded transition-colors"
               >
                 点数反映
               </button>
@@ -101,7 +101,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
                   send({ type: "clear_board" });
                 }
               }}
-              className="text-xs bg-red-800 hover:bg-red-700 text-white px-2 py-1 rounded transition-colors"
+              className="text-xs bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded transition-colors"
             >
               クリア
             </button>
@@ -117,12 +117,12 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
             maxLength={300}
             onChange={(e) => setText(e.target.value)}
             placeholder="回答を入力..."
-            className="min-w-0 flex-1 rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="min-w-0 flex-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button
             type="submit"
             disabled={!text.trim()}
-            className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500"
+            className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
           >
             送信
           </button>
@@ -130,13 +130,13 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
       )}
 
       {board.status === "answering" && myAnswer && (
-        <p className="text-xs text-green-400">回答済み: 「{myAnswer.text}」</p>
+        <p className="text-xs text-green-600">回答済み: 「{myAnswer.text}」</p>
       )}
 
       {board.status !== "closed" && (
         <div className="space-y-1">
           {board.status === "answering" && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-400">
               提出済み {answerList.length} / {Object.keys(players).length} 人
             </p>
           )}
@@ -147,12 +147,12 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
             return (
               <div
                 key={answer.playerId}
-                className="flex items-center gap-2 rounded-lg bg-gray-700 px-3 py-2 text-sm"
+                className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm"
               >
-                <span className="flex-1 min-w-0 truncate text-gray-200">
+                <span className="flex-1 min-w-0 truncate text-gray-800">
                   {name}
                   {board.status === "revealed" && (
-                    <span className="ml-2 text-white font-medium">
+                    <span className="ml-2 text-gray-900 font-medium">
                       「{answer.text}」
                     </span>
                   )}
@@ -172,7 +172,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
                       className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
                         answer.judgement === "correct"
                           ? "bg-green-600 text-white"
-                          : "bg-gray-600 hover:bg-green-700 text-gray-300"
+                          : "bg-gray-100 hover:bg-green-100 text-gray-700"
                       }`}
                     >
                       ○
@@ -189,7 +189,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
                       className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
                         answer.judgement === "incorrect"
                           ? "bg-red-600 text-white"
-                          : "bg-gray-600 hover:bg-red-700 text-gray-300"
+                          : "bg-gray-100 hover:bg-red-100 text-gray-700"
                       }`}
                     >
                       ×
@@ -204,7 +204,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
                             judgement: null,
                           })
                         }
-                        className="text-xs px-1.5 py-0.5 rounded bg-gray-600 hover:bg-gray-500 text-gray-300 transition-colors"
+                        className="text-xs px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
                       >
                         取消
                       </button>
@@ -216,7 +216,7 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
           })}
 
           {answerList.length === 0 && (
-            <p className="text-center text-xs text-gray-500 py-2">
+            <p className="text-center text-xs text-gray-400 py-2">
               まだ回答がありません
             </p>
           )}

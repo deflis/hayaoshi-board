@@ -23,11 +23,11 @@ export function HostRoleControls({ state, isHost, myPlayerId, send }: Props) {
   if (isHost) {
     if (!canChangeHost(state)) return null;
     return (
-      <section className="bg-gray-800 rounded-xl p-4">
+      <section className="bg-white rounded-lg border border-gray-200 p-4">
         <button
           type="button"
           onClick={() => send({ type: "leave_host" })}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-700 px-3 py-2 text-sm font-bold text-gray-200 transition-colors hover:bg-gray-600"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-200"
         >
           <LogOut size={16} />
           ホストを抜ける
@@ -39,12 +39,12 @@ export function HostRoleControls({ state, isHost, myPlayerId, send }: Props) {
   if (state.hostId !== null) return null;
 
   return (
-    <section className="bg-gray-800 rounded-xl p-4 space-y-2">
-      <p className="text-xs text-gray-400">現在ホストはいません</p>
+    <section className="bg-white rounded-lg border border-gray-200 p-4 space-y-2">
+      <p className="text-xs text-gray-500">現在ホストはいません</p>
       <button
         type="button"
         onClick={() => send({ type: "claim_host" })}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-500"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
       >
         <Crown size={16} />
         ホストになる
