@@ -5,6 +5,7 @@ import type {
   RoomState,
   RuleType,
 } from "../../party/types";
+import { ToggleRow } from "../ui/ToggleRow";
 import { RuleSettings } from "./RuleSettings";
 
 interface Props {
@@ -78,6 +79,14 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
           </div>
 
           <RuleSettings state={state} send={send} />
+
+          <div className="border-t border-gray-200 pt-4">
+            <ToggleRow
+              label="ボード機能"
+              checked={state.boardEnabled}
+              onChange={(v) => send({ type: "set_rule", boardEnabled: v })}
+            />
+          </div>
 
           <div className="border-t border-gray-200 pt-4 space-y-3">
             <label className="flex items-center gap-2 text-sm text-gray-600">

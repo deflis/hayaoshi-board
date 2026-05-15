@@ -53,6 +53,7 @@ function makeContext(roomId: string): QuizContext {
     eliminatePoints: null,
     nonBuzzerPoints: 0,
     maxWinners: 0,
+    boardEnabled: false,
   };
 }
 function isSnapshot(
@@ -346,6 +347,7 @@ export class QuizRoom extends Server<Env> {
           eliminatePoints: msg.eliminatePoints,
           nonBuzzerPoints: msg.nonBuzzerPoints,
           maxWinners: msg.maxWinners,
+          boardEnabled: msg.boardEnabled,
         };
       default:
         return null;

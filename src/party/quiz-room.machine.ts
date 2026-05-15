@@ -282,6 +282,7 @@ export const quizRoomMachine = setup({
         next.nonBuzzerPoints = event.nonBuzzerPoints;
       if (event.maxWinners != null)
         next.maxWinners = clampInteger(event.maxWinners, 0, 99);
+      if (event.boardEnabled != null) next.boardEnabled = event.boardEnabled;
       return next;
     }),
     setPlayerStats: assign(({ context, event }) => {

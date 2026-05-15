@@ -154,11 +154,13 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
             />
           )}
 
-          <BoardPanel
-            state={roomState}
-            myPlayerId={myPlayerId}
-            send={sendMessage}
-          />
+          {roomState.boardEnabled && (
+            <BoardPanel
+              state={roomState}
+              myPlayerId={myPlayerId}
+              send={sendMessage}
+            />
+          )}
 
           <HostRoleControls
             state={roomState}

@@ -69,6 +69,7 @@ export interface RoomState {
   lastBuzzes: BuzzEntry[]; // 前の問題のバズ着順（振り返り用）
   chatMessages: ChatMessage[];
   board: BoardState;
+  boardEnabled: boolean;
   // ルール設定
   ruleType: RuleType;
   answerTransition: AnswerTransitionRule;
@@ -109,6 +110,7 @@ export interface QuizContext {
   winPoints: number;
   eliminatePoints: number | null;
   nonBuzzerPoints: number;
+  boardEnabled: boolean;
 }
 
 export type ClientMessage = (
@@ -158,6 +160,7 @@ export type ClientMessage = (
       eliminatePoints?: number | null;
       nonBuzzerPoints?: number;
       maxWinners?: number;
+      boardEnabled?: boolean;
     }
 ) & { sessionId?: PlayerId };
 
@@ -210,6 +213,7 @@ export type QuizEvent =
       eliminatePoints?: number | null;
       nonBuzzerPoints?: number;
       maxWinners?: number;
+      boardEnabled?: boolean;
     }
   | { type: "HOST_DISCONNECTED"; playerId: PlayerId }
   | {
