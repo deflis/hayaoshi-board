@@ -8,7 +8,7 @@ interface Props {
 
 export function ScoreEditor({ player, state, send }: Props) {
   const inputClass =
-    "w-14 rounded bg-gray-900 px-2 py-1 text-right font-mono text-xs text-white ring-1 ring-gray-700 focus:outline-none focus:ring-blue-500";
+    "w-14 rounded bg-white px-2 py-1 text-right font-mono text-xs text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-indigo-500";
 
   if (
     state.ruleType === "mon_batsu" ||
@@ -17,7 +17,7 @@ export function ScoreEditor({ player, state, send }: Props) {
   ) {
     return (
       <div className="flex items-center gap-1 whitespace-nowrap">
-        <label className="flex items-center gap-1 text-green-400">
+        <label className="flex items-center gap-1 text-green-600">
           <span className="text-xs">○</span>
           <input
             type="number"
@@ -34,7 +34,7 @@ export function ScoreEditor({ player, state, send }: Props) {
             className={inputClass}
           />
         </label>
-        <label className="flex items-center gap-1 text-red-400">
+        <label className="flex items-center gap-1 text-red-600">
           <span className="text-xs">×</span>
           <input
             type="number"
@@ -56,7 +56,7 @@ export function ScoreEditor({ player, state, send }: Props) {
   }
 
   return (
-    <label className="flex items-center gap-1 text-yellow-400">
+    <label className="flex items-center gap-1 text-yellow-600">
       <input
         type="number"
         min={-9999}

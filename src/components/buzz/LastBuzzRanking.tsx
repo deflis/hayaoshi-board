@@ -13,7 +13,7 @@ export function LastBuzzRanking({ buzzes, players, label = "着順" }: Props) {
 
   return (
     <div className="w-full max-w-md">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
+      <p className="text-xs text-gray-400 mb-1">{label}</p>
       <div className="space-y-1">
         {buzzes.map((b, i) => (
           <BuzzRankingItem

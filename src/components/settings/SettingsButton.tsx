@@ -10,7 +10,7 @@ export function SettingsButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-gray-400 hover:text-white transition-colors"
+        className="text-gray-400 hover:text-gray-700 transition-colors"
         title="設定"
       >
         <Settings size={20} />

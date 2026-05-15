@@ -12,13 +12,13 @@ export function ScoreDisplay({ player, ruleType }: Props) {
     case "nbn":
       return (
         <span className="font-mono text-xs whitespace-nowrap">
-          <span className="text-green-400">○{player.correctCount}</span>{" "}
-          <span className="text-red-400">×{player.incorrectCount}</span>
+          <span className="text-green-600">○{player.correctCount}</span>{" "}
+          <span className="text-red-600">×{player.incorrectCount}</span>
         </span>
       );
     default:
       return (
-        <span className="font-bold text-yellow-400">{player.score}pt</span>
+        <span className="font-bold text-yellow-600">{player.score}pt</span>
       );
   }
 }

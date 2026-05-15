@@ -17,7 +17,7 @@ export function ToggleRow({ label, checked, onChange }: Props) {
       className="flex w-full items-center justify-between cursor-pointer"
       onClick={toggle}
     >
-      <span className="text-white">{label}</span>
+      <span className="text-gray-900">{label}</span>
       <ToggleSwitch checked={checked} />
     </button>
   );

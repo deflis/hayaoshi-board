@@ -7,7 +7,7 @@ export function ToggleSwitch({ checked }: Props) {
     <span
       aria-hidden="true"
       className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
-        checked ? "bg-blue-600" : "bg-gray-600"
+        checked ? "bg-indigo-600" : "bg-gray-300"
       }`}
     >
       <span
