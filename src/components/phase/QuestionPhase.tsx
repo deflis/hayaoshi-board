@@ -1,5 +1,4 @@
 import type { RoomState } from "../../party/types";
-import { BuzzButton } from "../buzz/BuzzButton";
 import { LastBuzzRanking } from "../buzz/LastBuzzRanking";
 
 interface Props {
@@ -9,7 +8,7 @@ interface Props {
   myPlayerId: string | null;
 }
 
-export function QuestionPhase({ state, onBuzz, isHost, myPlayerId }: Props) {
+export function QuestionPhase({ state, isHost, myPlayerId }: Props) {
   const myPlayer = myPlayerId ? state.players[myPlayerId] : null;
   const alreadyBuzzed = myPlayerId
     ? state.buzzes.some((b) => b.playerId === myPlayerId)
@@ -21,44 +20,37 @@ export function QuestionPhase({ state, onBuzz, isHost, myPlayerId }: Props) {
     myPlayer.suspendedUntilQuestion > 0 &&
     state.currentQuestionIndex <= myPlayer.suspendedUntilQuestion;
 
-  const isIneligible = !myPlayer || myPlayer.isEliminated || myPlayer.hasWon;
-  const buttonDisabled = alreadyBuzzed || isSuspended || !!isIneligible;
-
   return (
-    <div className="flex flex-col items-center justify-center gap-6 py-8 text-white">
+    <div className="flex flex-col items-center justify-center gap-6 py-8 text-gray-900">
       <div className="text-center">
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-500 text-sm">
           問題 {state.currentQuestionIndex} / {state.totalQuestions}
         </p>
         <h2 className="text-3xl font-bold mt-2">早押し受付中！</h2>
       </div>
 
-      {!isHost && !isIneligible && (
-        <BuzzButton onClick={onBuzz} disabled={buttonDisabled} />
-      )}
-
       {isSuspended && myPlayer && (
-        <p className="text-yellow-400 font-bold">
+        <p className="text-yellow-600 font-bold">
           💤 休み中（あと
           {myPlayer.suspendedUntilQuestion - state.currentQuestionIndex + 1}問）
         </p>
       )}
       {alreadyBuzzed && !isSuspended && (
-        <p className="text-yellow-400 text-sm font-bold">
+        <p className="text-yellow-600 text-sm font-bold">
           押しました！他の人を待っています
         </p>
       )}
-      {myPlayer?.isEliminated && <p className="text-red-400 font-bold">失格</p>}
+      {myPlayer?.isEliminated && <p className="text-red-600 font-bold">失格</p>}
       {myPlayer?.hasWon && (
-        <p className="text-yellow-400 font-bold">🏆 勝ち抜け済み</p>
+        <p className="text-yellow-600 font-bold">🏆 勝ち抜け済み</p>
       )}
 
       {isHost && (
-        <p className="text-gray-400">プレイヤーの早押しを待っています</p>
+        <p className="text-gray-500">プレイヤーの早押しを待っています</p>
       )}
 
       {state.buzzes.length > 0 && (
-        <p className="text-gray-500 text-xs">
+        <p className="text-gray-400 text-xs">
           {state.buzzes.length}人が押しています
         </p>
       )}

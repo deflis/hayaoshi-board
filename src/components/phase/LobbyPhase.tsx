@@ -41,59 +41,43 @@ const TRANSITION_LABELS = {
   all_order: "全順回答",
 } as const;
 
-export function LobbyPhase({ state, roomId, isHost, send }: Props) {
+export function LobbyPhase({ state, roomId, isHost: _isHost, send: _send }: Props) {
   const url =
     typeof window !== "undefined"
       ? `${window.location.origin}/room/${roomId}`
       : "";
 
   const players = Object.values(state.players);
-  const canStart = players.length >= 1;
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-bold mb-1">ロビー</h2>
-        <p className="text-gray-400 text-sm">
+        <p className="text-gray-500 text-sm">
           ルームID: <span className="font-mono">{roomId}</span>
         </p>
       </div>
 
       {url && (
-        <div className="bg-gray-700 rounded-lg p-3">
-          <p className="text-xs text-gray-400 mb-1">招待URL</p>
-          <p className="text-sm break-all">{url}</p>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500 mb-1">招待URL</p>
+          <p className="text-sm break-all text-gray-700">{url}</p>
           <CopyButton value={url} />
         </div>
       )}
 
       <div>
-        <p className="text-sm text-gray-400 mb-2">
+        <p className="text-sm text-gray-500 mb-2">
           参加者 ({players.length}人)
         </p>
         <PlayerList players={players} hostId={state.hostId} state={state} />
       </div>
 
-      <div className="bg-gray-700 rounded-lg p-3 text-sm">
-        <p className="text-xs text-gray-400 mb-1">ルール</p>
-        <p className="font-bold">{RULE_LABELS[state.ruleType]}</p>
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm">
+        <p className="text-xs text-gray-500 mb-1">ルール</p>
+        <p className="font-bold text-gray-900">{RULE_LABELS[state.ruleType]}</p>
         <p className="text-gray-400 text-xs mt-0.5">{ruleSummary(state)}</p>
       </div>
-
-      {isHost ? (
-        <button
-          type="button"
-          disabled={!canStart}
-          onClick={() => send({ type: "start_game" })}
-          className="w-full bg-green-600 hover:bg-green-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-black text-xl py-4 rounded-xl transition-colors shadow-lg"
-        >
-          ゲームスタート
-        </button>
-      ) : (
-        <p className="text-gray-500 text-sm text-center">
-          ホストがゲームを開始するまでお待ちください
-        </p>
-      )}
     </div>
   );
 }

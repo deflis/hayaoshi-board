@@ -7,12 +7,8 @@ interface Props {
   send: (msg: ClientMessage) => void;
 }
 
-export function FinishedPhase({ players, state, isHost, send }: Props) {
+export function FinishedPhase({ players, state }: Props) {
   const isMonBatsu = state.ruleType !== "simple" && state.ruleType !== "points";
-  const winners = Object.values(state.players).filter((p) => p.hasWon);
-  const hasActivePlayer =
-    (state.maxWinners === 0 || winners.length < state.maxWinners) &&
-    Object.values(state.players).some((p) => !p.hasWon && !p.isEliminated);
 
   const sorted = [...players].sort((a, b) => {
     if (a.hasWon !== b.hasWon) return a.hasWon ? -1 : 1;
@@ -21,7 +17,7 @@ export function FinishedPhase({ players, state, isHost, send }: Props) {
   });
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8 text-white">
+    <div className="flex flex-col items-center gap-6 py-8 text-gray-900">
       <h2 className="text-3xl font-black">ゲーム終了！</h2>
 
       <div className="w-full max-w-sm space-y-2">
@@ -30,16 +26,16 @@ export function FinishedPhase({ players, state, isHost, send }: Props) {
             key={p.id}
             className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
               p.hasWon
-                ? "bg-yellow-500 text-black font-black text-xl"
+                ? "bg-yellow-400 text-gray-900 font-black text-xl"
                 : p.isEliminated
-                  ? "bg-gray-700 text-gray-500"
+                  ? "bg-gray-100 text-gray-400"
                   : i === 0
-                    ? "bg-yellow-500 text-black text-xl font-black"
+                    ? "bg-yellow-400 text-gray-900 text-xl font-black"
                     : i === 1
-                      ? "bg-gray-300 text-black text-lg font-bold"
+                      ? "bg-gray-200 text-gray-800 text-lg font-bold"
                       : i === 2
-                        ? "bg-orange-600 text-white text-base font-bold"
-                        : "bg-gray-700 text-white"
+                        ? "bg-orange-500 text-white text-base font-bold"
+                        : "bg-gray-100 text-gray-900"
             }`}
           >
             <span className="w-8 text-center">
@@ -57,27 +53,6 @@ export function FinishedPhase({ players, state, isHost, send }: Props) {
           </div>
         ))}
       </div>
-
-      {isHost && (
-        <div className="mt-4 flex flex-col gap-3 w-full max-w-sm">
-          {hasActivePlayer && (
-            <button
-              type="button"
-              onClick={() => send({ type: "resume_game" })}
-              className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
-            >
-              続きから再開
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => send({ type: "restart_game" })}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
-          >
-            スコアリセットしてもう1回
-          </button>
-        </div>
-      )}
     </div>
   );
 }

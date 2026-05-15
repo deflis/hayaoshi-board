@@ -15,22 +15,22 @@ export function WaitingRoom({ state, roomId }: Props) {
       : "";
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-6 text-gray-900">
       <div>
         <h2 className="text-2xl font-bold mb-1">参加待ち</h2>
-        <p className="text-gray-400 text-sm">ルームID: {roomId}</p>
+        <p className="text-gray-500 text-sm">ルームID: {roomId}</p>
       </div>
 
       {url && (
-        <div className="bg-gray-700 rounded-lg p-3">
-          <p className="text-xs text-gray-400 mb-1">招待URL</p>
-          <p className="text-sm break-all">{url}</p>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500 mb-1">招待URL</p>
+          <p className="text-sm break-all text-gray-700">{url}</p>
           <CopyButton value={url} />
         </div>
       )}
 
       <div>
-        <p className="text-sm text-gray-400 mb-2">
+        <p className="text-sm text-gray-500 mb-2">
           参加者 ({Object.keys(state.players).length}人)
         </p>
         <PlayerList
@@ -47,7 +47,7 @@ export function WaitingRoom({ state, roomId }: Props) {
         />
       )}
 
-      <p className="text-gray-500 text-sm text-center">
+      <p className="text-gray-400 text-sm text-center">
         ホストが問題を開始するまでお待ちください
       </p>
     </div>
