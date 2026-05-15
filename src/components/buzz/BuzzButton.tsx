@@ -18,22 +18,22 @@ export function BuzzButton({ onClick, disabled }: Props) {
   if (numpadEnterBuzzEnabled) shortcutKeys.push("Num Enter");
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-2 w-full">
       <button
         type="button"
         onClick={onClick}
         disabled={disabled}
-        className={`w-64 h-64 rounded-full text-4xl font-black shadow-2xl transition-all select-none
+        className={`w-full py-6 rounded-lg text-3xl font-black shadow-lg transition-all select-none
           ${
             disabled
-              ? "bg-gray-600 text-gray-400 cursor-not-allowed scale-95"
-              : "bg-red-500 hover:bg-red-400 active:scale-95 text-white cursor-pointer hover:shadow-red-500/50"
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] text-white cursor-pointer"
           }`}
       >
         早押し!
       </button>
       {shortcutKeys.length > 0 && !disabled && (
-        <p className="text-gray-500 text-xs">
+        <p className="text-gray-400 text-xs">
           キーボード: {shortcutKeys.join(" / ")}
         </p>
       )}
