@@ -1,4 +1,10 @@
-import type { ClientMessage, Player, RoomState } from "../../party/types";
+import type {
+  BuzzEntry,
+  ClientMessage,
+  Player,
+  RoomPhase,
+  RoomState,
+} from "../../party/types";
 import { ScoreDisplay } from "./ScoreDisplay";
 import { ScoreEditor } from "./ScoreEditor";
 
@@ -23,8 +29,19 @@ function playerStatus(p: Player, state: RoomState): string | null {
   return null;
 }
 
+function buzzRank(playerId: string, buzzes: BuzzEntry[]): number | null {
+  const idx = buzzes.findIndex((b) => b.playerId === playerId);
+  return idx >= 0 ? idx + 1 : null;
+}
+
+const isLobbyPhase = (phase: RoomPhase) => phase === "lobby";
+const isBuzzPhase = (phase: RoomPhase) =>
+  phase === "question" || phase === "buzzed";
+
 export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
-  const { ruleType } = state;
+  const { phase, ruleType } = state;
+  const showScore = !isLobbyPhase(phase);
+  const showBuzzRank = isBuzzPhase(phase);
 
   const sorted = [...players].sort((a, b) => {
     if (a.hasWon !== b.hasWon) return a.hasWon ? -1 : 1;
@@ -32,23 +49,16 @@ export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
     return b.correctCount - a.correctCount || b.score - a.score;
   });
 
-  const ruleLabel: Record<typeof ruleType, string> = {
-    simple: "",
-    mon_batsu: `${state.winCount}○${state.eliminateCount}×`,
-    mon_kyu: `${state.winCount}○${state.eliminateCount}休`,
-    nbn: `${state.nbyN}byN`,
-    points: `+${state.addPoints}/-${state.subtractPoints} ${state.winPoints}pt`,
-  };
+  const title = isLobbyPhase(phase) ? `参加者 (${players.length}人)` : "スコア";
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h2 className="text-lg font-bold mb-1 text-gray-900">スコア</h2>
-      {ruleLabel[ruleType] && (
-        <p className="text-xs text-gray-500 mb-3">{ruleLabel[ruleType]}</p>
-      )}
+      <h2 className="text-lg font-bold mb-3 text-gray-900">{title}</h2>
       <ol className="space-y-2">
         {sorted.map((p) => {
           const status = playerStatus(p, state);
+          const rank = showBuzzRank ? buzzRank(p.id, state.buzzes) : null;
+
           return (
             <li
               key={p.id}
@@ -69,11 +79,23 @@ export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
                   )}
                   {p.name}
                 </span>
-                {isHost && send ? (
-                  <ScoreEditor player={p} state={state} send={send} />
-                ) : (
-                  <ScoreDisplay player={p} ruleType={ruleType} />
+                {rank != null && (
+                  <span
+                    className={`text-xs font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                      rank === 1
+                        ? "bg-yellow-400 text-gray-900"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {rank}位
+                  </span>
                 )}
+                {showScore &&
+                  (isHost && send ? (
+                    <ScoreEditor player={p} state={state} send={send} />
+                  ) : (
+                    <ScoreDisplay player={p} ruleType={ruleType} />
+                  ))}
               </div>
               {status && (
                 <span className="text-xs text-gray-400 mt-0.5">{status}</span>
