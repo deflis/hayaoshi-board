@@ -30,6 +30,8 @@ const RULE_LABELS: Record<RuleType, string> = {
 };
 
 export function RuleSettingsModal({ state, send, onClose }: Props) {
+  const canEditCoreRules = state.phase === "lobby";
+
   return (
     <div
       role="dialog"
@@ -58,37 +60,67 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
         <h2 className="text-lg font-bold text-gray-900 mb-6">ルール設定</h2>
 
         <div className="space-y-5">
-          <div>
-            <p className="text-xs text-gray-500 font-bold mb-2">ルール種別</p>
-            <div className="grid grid-cols-2 gap-1">
-              {(Object.keys(RULE_LABELS) as RuleType[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => send({ type: "set_rule", ruleType: r })}
-                  className={`text-xs py-2 rounded-lg transition-colors ${
-                    state.ruleType === r
-                      ? "bg-indigo-600 text-white font-bold"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {RULE_LABELS[r]}
-                </button>
-              ))}
+          {!canEditCoreRules && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              ゲーム開始後はルール種別・遷移ルールは変更できません
+            </p>
+          )}
+
+          <fieldset disabled={!canEditCoreRules} className={!canEditCoreRules ? "opacity-50" : ""}>
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs text-gray-500 font-bold mb-2">ルール種別</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {(Object.keys(RULE_LABELS) as RuleType[]).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => send({ type: "set_rule", ruleType: r })}
+                      className={`text-xs py-2 rounded-lg transition-colors ${
+                        state.ruleType === r
+                          ? "bg-indigo-600 text-white font-bold"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      } disabled:cursor-not-allowed`}
+                    >
+                      {RULE_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <RuleSettings state={state} send={send} />
+
+              <div className="border-t border-gray-200 pt-4 space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">解答遷移ルール</p>
+                  <select
+                    value={state.answerTransition}
+                    onChange={(e) =>
+                      send({
+                        type: "set_rule",
+                        answerTransition: e.target.value as AnswerTransitionRule,
+                      })
+                    }
+                    className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed"
+                  >
+                    {Object.entries(TRANSITION_LABELS).map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
+          </fieldset>
 
-          <RuleSettings state={state} send={send} />
-
-          <div className="border-t border-gray-200 pt-4">
+          <div className="border-t border-gray-200 pt-4 space-y-3">
             <ToggleRow
               label="ボード機能"
               checked={state.boardEnabled}
               onChange={(v) => send({ type: "set_rule", boardEnabled: v })}
             />
-          </div>
 
-          <div className="border-t border-gray-200 pt-4 space-y-3">
             <label className="flex items-center gap-2 text-sm text-gray-600">
               勝者数上限
               <input
@@ -103,26 +135,6 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
               />
               <span className="text-gray-400 text-xs">（0=制限なし）</span>
             </label>
-
-            <div>
-              <p className="text-xs text-gray-500 mb-1">解答遷移ルール</p>
-              <select
-                value={state.answerTransition}
-                onChange={(e) =>
-                  send({
-                    type: "set_rule",
-                    answerTransition: e.target.value as AnswerTransitionRule,
-                  })
-                }
-                className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                {Object.entries(TRANSITION_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
         </div>
       </div>
