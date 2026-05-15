@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { LogOut, X } from "lucide-react";
 import type {
   AnswerTransitionRule,
   ClientMessage,
@@ -12,6 +12,7 @@ interface Props {
   state: RoomState;
   send: (msg: ClientMessage) => void;
   onClose: () => void;
+  isHost?: boolean;
 }
 
 const TRANSITION_LABELS: Record<AnswerTransitionRule, string> = {
@@ -29,7 +30,7 @@ const RULE_LABELS: Record<RuleType, string> = {
   points: "+N/-M",
 };
 
-export function RuleSettingsModal({ state, send, onClose }: Props) {
+export function RuleSettingsModal({ state, send, onClose, isHost }: Props) {
   const canEditCoreRules = state.phase === "lobby";
 
   return (
@@ -66,10 +67,15 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
             </p>
           )}
 
-          <fieldset disabled={!canEditCoreRules} className={!canEditCoreRules ? "opacity-50" : ""}>
+          <fieldset
+            disabled={!canEditCoreRules}
+            className={!canEditCoreRules ? "opacity-50" : ""}
+          >
             <div className="space-y-5">
               <div>
-                <p className="text-xs text-gray-500 font-bold mb-2">ルール種別</p>
+                <p className="text-xs text-gray-500 font-bold mb-2">
+                  ルール種別
+                </p>
                 <div className="grid grid-cols-2 gap-1">
                   {(Object.keys(RULE_LABELS) as RuleType[]).map((r) => (
                     <button
@@ -98,7 +104,8 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
                     onChange={(e) =>
                       send({
                         type: "set_rule",
-                        answerTransition: e.target.value as AnswerTransitionRule,
+                        answerTransition: e.target
+                          .value as AnswerTransitionRule,
                       })
                     }
                     className="w-full bg-white border border-gray-200 text-gray-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed"
@@ -136,6 +143,23 @@ export function RuleSettingsModal({ state, send, onClose }: Props) {
               <span className="text-gray-400 text-xs">（0=制限なし）</span>
             </label>
           </div>
+
+          {isHost && (
+            <div className="border-t border-gray-200 pt-4">
+              <p className="text-xs text-gray-500 mb-2">ホスト管理</p>
+              <button
+                type="button"
+                onClick={() => {
+                  send({ type: "leave_host" });
+                  onClose();
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-200"
+              >
+                <LogOut size={16} />
+                ホストを抜ける
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

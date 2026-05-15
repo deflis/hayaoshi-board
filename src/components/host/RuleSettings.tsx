@@ -5,7 +5,8 @@ interface Props {
   send: (msg: ClientMessage) => void;
 }
 
-const inputClass = "w-12 bg-white border border-gray-200 text-gray-900 rounded px-2 py-1";
+const inputClass =
+  "w-12 bg-white border border-gray-200 text-gray-900 rounded px-2 py-1";
 
 export function RuleSettings({ state, send }: Props) {
   const s = state;

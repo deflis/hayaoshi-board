@@ -75,7 +75,9 @@ export function ContextActionBar({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("ゲームを終了しますか？スコアは保持されます。")) {
+              if (
+                window.confirm("ゲームを終了しますか？スコアは保持されます。")
+              ) {
                 send({ type: "finish_game" });
               }
             }}
@@ -126,9 +128,7 @@ export function ContextActionBar({
             onClick={() => send({ type: "judge", correct: true })}
             className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors"
           >
-            {isMonBatsu
-              ? `正解 ○${currentAnswerer.correctCount + 1}`
-              : "正解"}
+            {isMonBatsu ? `正解 ○${currentAnswerer.correctCount + 1}` : "正解"}
           </button>
           <button
             type="button"
@@ -177,7 +177,9 @@ export function ContextActionBar({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("ゲームを終了しますか？スコアは保持されます。")) {
+              if (
+                window.confirm("ゲームを終了しますか？スコアは保持されます。")
+              ) {
                 send({ type: "finish_game" });
               }
             }}

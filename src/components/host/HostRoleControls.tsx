@@ -1,4 +1,4 @@
-import { Crown, LogOut } from "lucide-react";
+import { Crown } from "lucide-react";
 import type { ClientMessage, RoomState } from "../../party/types";
 
 interface Props {
@@ -8,34 +8,9 @@ interface Props {
   send: (msg: ClientMessage) => void;
 }
 
-function canChangeHost(state: RoomState): boolean {
-  return (
-    state.phase === "lobby" ||
-    state.phase === "waiting" ||
-    state.phase === "result" ||
-    state.phase === "finished"
-  );
-}
-
 export function HostRoleControls({ state, isHost, myPlayerId, send }: Props) {
   if (!myPlayerId) return null;
-
-  if (isHost) {
-    if (!canChangeHost(state)) return null;
-    return (
-      <section className="bg-white rounded-lg border border-gray-200 p-4">
-        <button
-          type="button"
-          onClick={() => send({ type: "leave_host" })}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-200"
-        >
-          <LogOut size={16} />
-          ホストを抜ける
-        </button>
-      </section>
-    );
-  }
-
+  if (isHost) return null;
   if (state.hostId !== null) return null;
 
   return (
