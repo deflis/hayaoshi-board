@@ -41,10 +41,10 @@ export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-xl p-4">
-      <h2 className="text-lg font-bold mb-1 text-white">スコア</h2>
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
+      <h2 className="text-lg font-bold mb-1 text-gray-900">スコア</h2>
       {ruleLabel[ruleType] && (
-        <p className="text-xs text-gray-400 mb-3">{ruleLabel[ruleType]}</p>
+        <p className="text-xs text-gray-500 mb-3">{ruleLabel[ruleType]}</p>
       )}
       <ol className="space-y-2">
         {sorted.map((p) => {
@@ -54,16 +54,16 @@ export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
               key={p.id}
               className={`flex flex-col rounded-lg px-2 py-1 text-sm ${
                 p.hasWon
-                  ? "bg-yellow-500/20 text-yellow-300"
+                  ? "bg-yellow-50 text-yellow-700"
                   : p.isEliminated
-                    ? "bg-red-900/30 text-gray-500"
-                    : "text-white"
+                    ? "bg-red-50 text-gray-400"
+                    : "text-gray-900"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span className="flex-1 truncate">
                   {hostId === p.id && (
-                    <span className="text-xs bg-blue-600 text-white rounded px-1 mr-1">
+                    <span className="text-xs bg-indigo-600 text-white rounded px-1 mr-1">
                       ホスト
                     </span>
                   )}

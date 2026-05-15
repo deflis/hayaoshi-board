@@ -23,26 +23,26 @@ export function PlayerCard({
     <li
       className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${
         player.isEliminated
-          ? "bg-red-900/30 text-gray-500"
+          ? "bg-red-50 text-gray-400"
           : player.hasWon
-            ? "bg-yellow-500/20 text-yellow-300"
+            ? "bg-yellow-50 text-yellow-700"
             : rank === 0
-              ? "bg-yellow-500 text-black font-bold"
+              ? "bg-yellow-400 text-gray-900 font-bold"
               : hasBuzzed
-                ? "bg-blue-700 text-white"
-                : "bg-gray-700 text-white"
+                ? "bg-indigo-100 text-indigo-800"
+                : "bg-gray-100 text-gray-900"
       }`}
     >
       <span className="flex items-center gap-2">
         {hostId === player.id && (
-          <span className="text-xs bg-blue-600 text-white rounded px-1">
+          <span className="text-xs bg-indigo-600 text-white rounded px-1">
             ホスト
           </span>
         )}
         {player.hasWon && <span>🏆</span>}
         {hasBuzzed && !player.isEliminated && !player.hasWon && (
           <span
-            className={`text-xs rounded px-1 ${rank === 0 ? "bg-black/20" : "bg-white/20"}`}
+            className={`text-xs rounded px-1 ${rank === 0 ? "bg-black/10" : "bg-indigo-600/20"}`}
           >
             {rank + 1}位
           </span>
@@ -52,8 +52,8 @@ export function PlayerCard({
       {showScore &&
         (isMonBatsu ? (
           <span className="font-mono text-xs whitespace-nowrap">
-            <span className="text-green-400">○{player.correctCount}</span>{" "}
-            <span className="text-red-400">×{player.incorrectCount}</span>
+            <span className="text-green-600">○{player.correctCount}</span>{" "}
+            <span className="text-red-600">×{player.incorrectCount}</span>
           </span>
         ) : (
           <span className="font-bold">{player.score}pt</span>

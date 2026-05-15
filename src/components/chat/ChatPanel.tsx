@@ -33,15 +33,15 @@ export function ChatPanel({ state, myPlayerId, send }: Props) {
   }
 
   return (
-    <section className="bg-gray-800 rounded-xl p-4 flex h-80 flex-col">
+    <section className="h-full flex flex-col p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold text-white">チャット</h2>
-        <span className="text-xs text-gray-500">{messages.length}/100</span>
+        <h2 className="text-lg font-bold text-gray-900">チャット</h2>
+        <span className="text-xs text-gray-400">{messages.length}/100</span>
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {messages.length === 0 ? (
-          <p className="pt-8 text-center text-sm text-gray-500">
+          <p className="pt-8 text-center text-sm text-gray-400">
             まだメッセージはありません
           </p>
         ) : (
@@ -63,14 +63,14 @@ export function ChatPanel({ state, myPlayerId, send }: Props) {
           maxLength={300}
           onChange={(event) => setText(event.target.value)}
           placeholder="メッセージ"
-          className="min-w-0 flex-1 rounded-lg bg-gray-700 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="min-w-0 flex-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <button
           type="submit"
           disabled={!text.trim()}
           aria-label="送信"
           title="送信"
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-indigo-600 text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
         >
           <Send size={18} />
         </button>
