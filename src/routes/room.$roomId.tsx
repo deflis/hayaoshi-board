@@ -112,6 +112,15 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
       phase === "finished");
 
   const showScoreboard = phase !== "finished";
+  const scoreBoard = showScoreboard ? (
+    <Scoreboard
+      players={players}
+      hostId={roomState.hostId}
+      state={roomState}
+      isHost={isHost}
+      send={sendMessage}
+    />
+  ) : null;
 
   return (
     <div className="h-screen bg-[#f8f9ff] text-gray-900 flex flex-col">
@@ -190,16 +199,6 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
             </div>
           )}
 
-          {showScoreboard && (
-            <Scoreboard
-              players={players}
-              hostId={roomState.hostId}
-              state={roomState}
-              isHost={isHost}
-              send={sendMessage}
-            />
-          )}
-
           {phase === "lobby" && (
             <LobbyPhase
               state={roomState}
@@ -239,6 +238,8 @@ function ActiveRoomPage({ roomId, name }: { roomId: string; name: string }) {
               send={sendMessage}
             />
           )}
+
+          {scoreBoard}
 
           {roomState.boardEnabled && (
             <BoardPanel

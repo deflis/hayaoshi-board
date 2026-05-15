@@ -1,3 +1,4 @@
+import { type FormEvent, useState } from "react";
 import type { ClientMessage, RoomState } from "../../party/types";
 import { BuzzButton } from "../buzz/BuzzButton";
 
@@ -7,6 +8,60 @@ interface Props {
   myPlayerId: string | null;
   onBuzz: () => void;
   send: (msg: ClientMessage) => void;
+}
+
+function BoardInputSection({
+  state,
+  myPlayerId,
+  send,
+}: {
+  state: RoomState;
+  myPlayerId: string | null;
+  send: (msg: ClientMessage) => void;
+}) {
+  const [text, setText] = useState("");
+  const { board } = state;
+  const myAnswer = myPlayerId ? board.answers[myPlayerId] : null;
+
+  if (board.status !== "answering") return null;
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    send({ type: "submit_board_answer", text: trimmed });
+    setText("");
+  }
+
+  if (myAnswer) {
+    return (
+      <div className="px-4 py-2 border-t border-gray-100 text-xs text-green-600">
+        ボード回答済み: 「{myAnswer.text}」
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-2 border-t border-gray-100">
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <input
+          type="text"
+          value={text}
+          maxLength={300}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="ボードに回答を入力..."
+          className="min-w-0 flex-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <button
+          type="submit"
+          disabled={!text.trim()}
+          className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+        >
+          送信
+        </button>
+      </form>
+    </div>
+  );
 }
 
 export function ContextActionBar({
@@ -38,10 +93,14 @@ export function ContextActionBar({
     (state.maxWinners === 0 || winners.length < state.maxWinners) &&
     Object.values(players).some((p) => !p.hasWon && !p.isEliminated);
 
+  const showBoardInput = !isHost && state.boardEnabled && myPlayerId;
+
+  let phaseContent: React.ReactNode = null;
+
   if (phase === "lobby") {
     if (isHost) {
       const canStart = Object.keys(players).length >= 1;
-      return (
+      phaseContent = (
         <div className="px-4 py-3">
           <button
             type="button"
@@ -53,17 +112,16 @@ export function ContextActionBar({
           </button>
         </div>
       );
+    } else {
+      phaseContent = (
+        <div className="px-4 py-3 text-center text-gray-500 text-sm">
+          ホストがゲームを開始するまでお待ちください
+        </div>
+      );
     }
-    return (
-      <div className="px-4 py-3 text-center text-gray-500 text-sm">
-        ホストがゲームを開始するまでお待ちください
-      </div>
-    );
-  }
-
-  if (phase === "waiting") {
+  } else if (phase === "waiting") {
     if (isHost) {
-      return (
+      phaseContent = (
         <div className="px-4 py-3 flex gap-3">
           <button
             type="button"
@@ -87,17 +145,16 @@ export function ContextActionBar({
           </button>
         </div>
       );
+    } else {
+      phaseContent = (
+        <div className="px-4 py-3 text-center text-gray-500 text-sm">
+          ホストが問題を開始するまでお待ちください
+        </div>
+      );
     }
-    return (
-      <div className="px-4 py-3 text-center text-gray-500 text-sm">
-        ホストが問題を開始するまでお待ちください
-      </div>
-    );
-  }
-
-  if (phase === "question") {
+  } else if (phase === "question") {
     if (isHost) {
-      return (
+      phaseContent = (
         <div className="px-4 py-3">
           <button
             type="button"
@@ -108,20 +165,16 @@ export function ContextActionBar({
           </button>
         </div>
       );
-    }
-    if (canBuzz) {
-      return (
+    } else if (canBuzz) {
+      phaseContent = (
         <div className="px-4 py-3">
           <BuzzButton onClick={onBuzz} disabled={alreadyBuzzed} />
         </div>
       );
     }
-    return null;
-  }
-
-  if (phase === "buzzed") {
+  } else if (phase === "buzzed") {
     if (isHost && currentAnswerer) {
-      return (
+      phaseContent = (
         <div className="px-4 py-3 flex gap-3">
           <button
             type="button"
@@ -152,20 +205,16 @@ export function ContextActionBar({
           </button>
         </div>
       );
-    }
-    if (canBuzz && !alreadyBuzzed) {
-      return (
+    } else if (canBuzz && !alreadyBuzzed) {
+      phaseContent = (
         <div className="px-4 py-3">
           <BuzzButton onClick={onBuzz} />
         </div>
       );
     }
-    return null;
-  }
-
-  if (phase === "result") {
+  } else if (phase === "result") {
     if (isHost) {
-      return (
+      phaseContent = (
         <div className="px-4 py-3 flex gap-3">
           <button
             type="button"
@@ -189,17 +238,16 @@ export function ContextActionBar({
           </button>
         </div>
       );
+    } else {
+      phaseContent = (
+        <div className="px-4 py-3 text-center text-gray-500 text-sm">
+          ホストが次の問題に進みます...
+        </div>
+      );
     }
-    return (
-      <div className="px-4 py-3 text-center text-gray-500 text-sm">
-        ホストが次の問題に進みます...
-      </div>
-    );
-  }
-
-  if (phase === "finished") {
+  } else if (phase === "finished") {
     if (isHost) {
-      return (
+      phaseContent = (
         <div className="px-4 py-3 flex gap-3">
           {hasActivePlayer && (
             <button
@@ -220,8 +268,16 @@ export function ContextActionBar({
         </div>
       );
     }
-    return null;
   }
 
-  return null;
+  if (!phaseContent && !showBoardInput) return null;
+
+  return (
+    <>
+      {phaseContent}
+      {showBoardInput && (
+        <BoardInputSection state={state} myPlayerId={myPlayerId} send={send} />
+      )}
+    </>
+  );
 }

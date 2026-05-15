@@ -44,12 +44,25 @@ export function Scoreboard({ players, hostId, state, isHost, send }: Props) {
   const showBuzzRank = isBuzzPhase(phase);
 
   const sorted = [...players].sort((a, b) => {
+    if (showBuzzRank) {
+      const aRank = buzzRank(a.id, state.buzzes);
+      const bRank = buzzRank(b.id, state.buzzes);
+      if (aRank !== null || bRank !== null) {
+        if (aRank === null) return 1;
+        if (bRank === null) return -1;
+        return aRank - bRank;
+      }
+    }
     if (a.hasWon !== b.hasWon) return a.hasWon ? -1 : 1;
     if (a.isEliminated !== b.isEliminated) return a.isEliminated ? 1 : -1;
     return b.correctCount - a.correctCount || b.score - a.score;
   });
 
-  const title = isLobbyPhase(phase) ? `参加者 (${players.length}人)` : "スコア";
+  const title = isLobbyPhase(phase)
+    ? `参加者 (${players.length}人)`
+    : showBuzzRank
+      ? "早押し状況"
+      : "スコア";
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">

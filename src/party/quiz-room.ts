@@ -443,6 +443,7 @@ export class QuizRoom extends Server<Env> {
     if (!playerId) return;
     const { board, context } = await this.getBoardAndContext();
     if (board.status !== "answering") return;
+    if (context.hostId === playerId) return;
     if (board.answers[playerId]) return;
     const player = context.players[playerId];
     if (!player) return;

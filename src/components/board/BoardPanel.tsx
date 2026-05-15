@@ -1,4 +1,3 @@
-import { type FormEvent, useState } from "react";
 import type { ClientMessage, PlayerId, RoomState } from "../../party/types";
 import { JudgementBadge } from "./JudgementBadge";
 
@@ -9,22 +8,12 @@ interface Props {
 }
 
 export function BoardPanel({ state, myPlayerId, send }: Props) {
-  const [text, setText] = useState("");
   const { board, hostId, players } = state;
   const isHost = myPlayerId === hostId;
-  const myAnswer = myPlayerId ? board.answers[myPlayerId] : null;
   const answerList = Object.values(board.answers).sort(
     (a, b) => a.submittedAt - b.submittedAt,
   );
   const hasJudgements = answerList.some((a) => a.judgement !== null);
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    send({ type: "submit_board_answer", text: trimmed });
-    setText("");
-  }
 
   return (
     <section className="bg-white rounded-lg border border-gray-200 p-4 flex flex-col gap-3">
@@ -109,29 +98,6 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
         </div>
       )}
 
-      {board.status === "answering" && !myAnswer && myPlayerId && (
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <input
-            type="text"
-            value={text}
-            maxLength={300}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="回答を入力..."
-            className="min-w-0 flex-1 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-          <button
-            type="submit"
-            disabled={!text.trim()}
-            className="shrink-0 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-          >
-            送信
-          </button>
-        </form>
-      )}
-
-      {board.status === "answering" && myAnswer && (
-        <p className="text-xs text-green-600">回答済み: 「{myAnswer.text}」</p>
-      )}
 
       {board.status !== "closed" && (
         <div className="space-y-1">
