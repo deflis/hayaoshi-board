@@ -1,33 +1,11 @@
 import { type FormEvent, useState } from "react";
-import type {
-  BoardAnswer,
-  ClientMessage,
-  PlayerId,
-  RoomState,
-} from "../../party/types";
+import type { ClientMessage, PlayerId, RoomState } from "../../party/types";
+import { JudgementBadge } from "./JudgementBadge";
 
 interface Props {
   state: RoomState;
   myPlayerId: PlayerId | null;
   send: (msg: ClientMessage) => void;
-}
-
-function JudgementBadge({ answer }: { answer: BoardAnswer }) {
-  if (answer.judgement === "correct") {
-    return (
-      <span className="ml-1 rounded px-1 py-0.5 text-xs font-bold bg-green-600 text-white">
-        ○
-      </span>
-    );
-  }
-  if (answer.judgement === "incorrect") {
-    return (
-      <span className="ml-1 rounded px-1 py-0.5 text-xs font-bold bg-red-600 text-white">
-        ×
-      </span>
-    );
-  }
-  return null;
 }
 
 export function BoardPanel({ state, myPlayerId, send }: Props) {

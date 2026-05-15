@@ -1,5 +1,6 @@
 import type { ClientMessage, RoomState } from "../../party/types";
-import { PlayerList } from "./PlayerList";
+import { PlayerList } from "../player/PlayerList";
+import { CopyButton } from "../ui/CopyButton";
 
 interface Props {
   state: RoomState;
@@ -10,17 +11,10 @@ interface Props {
 
 const RULE_LABELS = {
   simple: "シンプル（+1pt）",
-  mon_batsu: `m○n×`,
-  mon_kyu: `m○n休`,
+  mon_batsu: "m○n×",
+  mon_kyu: "m○n休",
   nbn: "NbyN",
   points: "+N/-M",
-} as const;
-
-const TRANSITION_LABELS = {
-  single_chance: "シングルチャンス",
-  endless_chance: "エンドレスチャンス",
-  second_chance: "2着切り",
-  all_order: "全順回答",
 } as const;
 
 function ruleSummary(state: RoomState): string {
@@ -39,6 +33,13 @@ function ruleSummary(state: RoomState): string {
       return `シンプル ／ ${t}`;
   }
 }
+
+const TRANSITION_LABELS = {
+  single_chance: "シングルチャンス",
+  endless_chance: "エンドレスチャンス",
+  second_chance: "2着切り",
+  all_order: "全順回答",
+} as const;
 
 export function LobbyPhase({ state, roomId, isHost, send }: Props) {
   const url =
@@ -62,13 +63,7 @@ export function LobbyPhase({ state, roomId, isHost, send }: Props) {
         <div className="bg-gray-700 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">招待URL</p>
           <p className="text-sm break-all">{url}</p>
-          <button
-            type="button"
-            onClick={() => navigator.clipboard.writeText(url)}
-            className="mt-2 text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition-colors"
-          >
-            コピー
-          </button>
+          <CopyButton value={url} />
         </div>
       )}
 

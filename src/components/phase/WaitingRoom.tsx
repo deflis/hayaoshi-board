@@ -1,6 +1,7 @@
 import type { RoomState } from "../../party/types";
-import { LastBuzzRanking } from "./LastBuzzRanking";
-import { PlayerList } from "./PlayerList";
+import { LastBuzzRanking } from "../buzz/LastBuzzRanking";
+import { PlayerList } from "../player/PlayerList";
+import { CopyButton } from "../ui/CopyButton";
 
 interface Props {
   state: RoomState;
@@ -24,13 +25,7 @@ export function WaitingRoom({ state, roomId }: Props) {
         <div className="bg-gray-700 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">招待URL</p>
           <p className="text-sm break-all">{url}</p>
-          <button
-            type="button"
-            onClick={() => navigator.clipboard.writeText(url)}
-            className="mt-2 text-xs bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded transition-colors"
-          >
-            コピー
-          </button>
+          <CopyButton value={url} />
         </div>
       )}
 

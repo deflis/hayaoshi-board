@@ -1,6 +1,6 @@
 import type { RoomState } from "../../party/types";
-import { BuzzButton } from "./BuzzButton";
-import { LastBuzzRanking } from "./LastBuzzRanking";
+import { BuzzButton } from "../buzz/BuzzButton";
+import { LastBuzzRanking } from "../buzz/LastBuzzRanking";
 
 interface Props {
   state: RoomState;

@@ -1,18 +1,12 @@
 import { Send } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import type { ClientMessage, RoomState } from "../../party/types";
+import { ChatMessage } from "./ChatMessage";
 
 interface Props {
   state: RoomState;
   myPlayerId: string | null;
   send: (msg: ClientMessage) => void;
-}
-
-function formatTime(timestamp: number): string {
-  return new Intl.DateTimeFormat("ja-JP", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(timestamp);
 }
 
 export function ChatPanel({ state, myPlayerId, send }: Props) {
@@ -51,31 +45,13 @@ export function ChatPanel({ state, myPlayerId, send }: Props) {
             まだメッセージはありません
           </p>
         ) : (
-          messages.map((message) => {
-            const isMine = message.playerId === myPlayerId;
-            return (
-              <div
-                key={message.id}
-                className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
-              >
-                <div className="mb-1 max-w-full px-1 text-xs text-gray-500">
-                  <span className="font-medium text-gray-400">
-                    {message.playerName}
-                  </span>
-                  <span className="ml-2">{formatTime(message.sentAt)}</span>
-                </div>
-                <div
-                  className={`max-w-full break-words rounded-lg px-3 py-2 text-sm ${
-                    isMine
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 text-gray-100"
-                  }`}
-                >
-                  {message.text}
-                </div>
-              </div>
-            );
-          })
+          messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              isMine={message.playerId === myPlayerId}
+            />
+          ))
         )}
         <div ref={bottomRef} />
       </div>

@@ -1,26 +1,8 @@
-import { Settings, X } from "lucide-react";
-import { useState } from "react";
-import { useUserSettings } from "../stores/userSettings";
+import { X } from "lucide-react";
+import { useUserSettings } from "../../stores/userSettings";
+import { ToggleRow } from "../ui/ToggleRow";
 
-export function SettingsButton() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-gray-400 hover:text-white transition-colors"
-        title="設定"
-      >
-        <Settings size={20} />
-      </button>
-      {open && <SettingsModal onClose={() => setOpen(false)} />}
-    </>
-  );
-}
-
-function SettingsModal({ onClose }: { onClose: () => void }) {
+export function SettingsModal({ onClose }: { onClose: () => void }) {
   const soundEnabled = useUserSettings((s) => s.soundEnabled);
   const setSoundEnabled = useUserSettings((s) => s.setSoundEnabled);
   const enterBuzzEnabled = useUserSettings((s) => s.enterBuzzEnabled);
@@ -91,36 +73,5 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center justify-between cursor-pointer">
-      <span className="text-white">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${
-          checked ? "bg-blue-600" : "bg-gray-600"
-        }`}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
-    </label>
   );
 }
