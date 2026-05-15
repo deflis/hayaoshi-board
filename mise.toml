@@ -1,2 +1,5 @@
 [settings]
 legacy_version_file = true
+
+[tools]
+"npm:@playwright/cli" = "latest"
