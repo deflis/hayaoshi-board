@@ -21,12 +21,12 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f8f9ff] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <h1 className="text-4xl font-black text-white text-center mb-2">
+        <h1 className="text-4xl font-black text-gray-900 text-center mb-2">
           早押しボード
         </h1>
-        <p className="text-gray-400 text-center mb-8 text-sm">
+        <p className="text-gray-500 text-center mb-8 text-sm">
           リアルタイム早押しクイズプラットフォーム
         </p>
 
@@ -34,7 +34,7 @@ function Home() {
           <div>
             <label
               htmlFor="player-name"
-              className="block text-sm text-gray-400 mb-1"
+              className="block text-sm text-gray-600 mb-1"
             >
               プレイヤー名
             </label>
@@ -45,14 +45,14 @@ function Home() {
               onChange={(e) => setName(e.target.value)}
               placeholder="名前を入力"
               required
-              className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
 
           <div>
             <label
               htmlFor="room-id"
-              className="block text-sm text-gray-400 mb-1"
+              className="block text-sm text-gray-600 mb-1"
             >
               ルームID（空欄で自動生成）
             </label>
@@ -62,13 +62,13 @@ function Home() {
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
               placeholder="例: abc12345"
-              className="w-full bg-gray-700 text-white rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+              className="w-full bg-white border border-gray-200 text-gray-900 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition-colors"
           >
             ルームに参加 / 作成
           </button>
