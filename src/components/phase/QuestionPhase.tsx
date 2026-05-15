@@ -1,5 +1,4 @@
 import type { RoomState } from "../../party/types";
-import { LastBuzzRanking } from "../buzz/LastBuzzRanking";
 
 interface Props {
   state: RoomState;
@@ -20,48 +19,51 @@ export function QuestionPhase({ state, isHost, myPlayerId }: Props) {
     myPlayer.suspendedUntilQuestion > 0 &&
     state.currentQuestionIndex <= myPlayer.suspendedUntilQuestion;
 
+  const buzzCount = state.buzzes.length;
+
   return (
-    <div className="flex flex-col items-center justify-center gap-6 py-8 text-gray-900">
-      <div className="text-center">
-        <p className="text-gray-500 text-sm">
-          問題 {state.currentQuestionIndex} / {state.totalQuestions}
-        </p>
-        <h2 className="text-3xl font-bold mt-2">早押し受付中！</h2>
+    <div className="flex flex-col items-center justify-center gap-4 py-6 text-gray-900">
+      <div className="w-full max-w-lg bg-white rounded-2xl border-2 border-green-400 px-8 py-10 text-center shadow-sm">
+        <h2 className="text-4xl font-black text-gray-900 mb-3">
+          早押し受付中！
+        </h2>
+
+        {isSuspended && myPlayer && (
+          <p className="text-yellow-600 font-bold mt-2">
+            💤 休み中（あと
+            {myPlayer.suspendedUntilQuestion - state.currentQuestionIndex + 1}
+            問）
+          </p>
+        )}
+        {alreadyBuzzed && !isSuspended && (
+          <p className="text-indigo-600 font-bold mt-2">✓ 押しました！</p>
+        )}
+        {myPlayer?.isEliminated && (
+          <p className="text-red-600 font-bold mt-2">失格</p>
+        )}
+        {myPlayer?.hasWon && (
+          <p className="text-yellow-600 font-bold mt-2">🏆 勝ち抜け済み</p>
+        )}
+        {isHost && !buzzCount && (
+          <p className="text-gray-400 text-sm mt-2">
+            プレイヤーの早押しを待っています
+          </p>
+        )}
+
+        {buzzCount > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-1.5">
+            {state.buzzes.map((buzz) => (
+              <span
+                key={buzz.playerId}
+                className="w-2.5 h-2.5 rounded-full bg-yellow-400"
+              />
+            ))}
+            <span className="ml-2 text-sm text-gray-500">
+              {buzzCount}人が押しています
+            </span>
+          </div>
+        )}
       </div>
-
-      {isSuspended && myPlayer && (
-        <p className="text-yellow-600 font-bold">
-          💤 休み中（あと
-          {myPlayer.suspendedUntilQuestion - state.currentQuestionIndex + 1}問）
-        </p>
-      )}
-      {alreadyBuzzed && !isSuspended && (
-        <p className="text-yellow-600 text-sm font-bold">
-          押しました！他の人を待っています
-        </p>
-      )}
-      {myPlayer?.isEliminated && <p className="text-red-600 font-bold">失格</p>}
-      {myPlayer?.hasWon && (
-        <p className="text-yellow-600 font-bold">🏆 勝ち抜け済み</p>
-      )}
-
-      {isHost && (
-        <p className="text-gray-500">プレイヤーの早押しを待っています</p>
-      )}
-
-      {state.buzzes.length > 0 && (
-        <p className="text-gray-400 text-xs">
-          {state.buzzes.length}人が押しています
-        </p>
-      )}
-
-      {state.lastBuzzes.length > 0 && (
-        <LastBuzzRanking
-          buzzes={state.lastBuzzes}
-          players={state.players}
-          label="前の問題の着順"
-        />
-      )}
     </div>
   );
 }

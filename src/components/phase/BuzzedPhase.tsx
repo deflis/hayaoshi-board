@@ -24,59 +24,54 @@ export function BuzzedPhase({ state, myPlayerId, isHost }: Props) {
   const currentAnswerer = buzzes[0] ? players[buzzes[0].playerId] : null;
 
   return (
-    <div className="flex flex-col items-center gap-6 py-8 text-gray-900">
-      <h2 className="text-xl font-bold text-gray-700">早押し結果</h2>
-
+    <div className="flex flex-col items-center gap-4 py-6 text-gray-900">
       {currentAnswerer && (
-        <p className="text-sm text-gray-500">
-          判定対象:{" "}
-          <span className="text-indigo-600 font-bold">{currentAnswerer.name}</span>
+        <div className="w-full max-w-lg bg-yellow-400 rounded-2xl px-8 py-8 text-center shadow-sm">
+          <p className="text-sm font-bold text-yellow-800 mb-1">🎯 早押し！</p>
+          <p className="text-4xl font-black text-gray-900">
+            {currentAnswerer.name}
+          </p>
           {buzzes.length > 1 && (
-            <span className="ml-1 text-gray-400">
-              （あと{buzzes.length - 1}人）
-            </span>
+            <p className="text-sm text-yellow-800 mt-2">
+              あと{buzzes.length - 1}人が待機中
+            </p>
           )}
-        </p>
+        </div>
       )}
 
-      <div className="w-full max-w-md space-y-2">
-        {buzzes.map((buzz, i) => {
-          const player = players[buzz.playerId];
-          const diffMs = buzz.buzzedAt - firstBuzzedAt;
-          const isMe = buzz.playerId === myPlayerId;
-          const isFirst = i === 0;
+      {buzzes.length > 1 && (
+        <div className="w-full max-w-lg space-y-1">
+          {buzzes.slice(1).map((buzz, i) => {
+            const player = players[buzz.playerId];
+            const diffMs = buzz.buzzedAt - firstBuzzedAt;
+            const isMe = buzz.playerId === myPlayerId;
 
-          return (
-            <div
-              key={buzz.playerId}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
-                isFirst
-                  ? "bg-yellow-400 text-gray-900"
-                  : isMe
+            return (
+              <div
+                key={buzz.playerId}
+                className={`flex items-center gap-3 rounded-xl px-4 py-2 ${
+                  isMe
                     ? "bg-indigo-100 text-indigo-800"
                     : "bg-gray-100 text-gray-900"
-              }`}
-            >
-              <span
-                className={`w-6 text-center font-black ${isFirst ? "text-gray-900" : "text-gray-500"}`}
+                }`}
               >
-                {i + 1}
-              </span>
-              <span className="flex-1 font-bold">
-                {player?.name ?? "?"}
-                {isMe && (
-                  <span className="ml-2 text-sm opacity-75">（あなた）</span>
-                )}
-              </span>
-              <span
-                className={`text-sm font-mono ${isFirst ? "text-gray-700" : "text-gray-500"}`}
-              >
-                {isFirst ? "基準" : `+${diffMs}ms`}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+                <span className="w-6 text-center font-bold text-gray-500 text-sm">
+                  {i + 2}
+                </span>
+                <span className="flex-1 font-medium text-sm">
+                  {player?.name ?? "?"}
+                  {isMe && (
+                    <span className="ml-2 text-xs opacity-75">（あなた）</span>
+                  )}
+                </span>
+                <span className="text-xs font-mono text-gray-400">
+                  +{diffMs}ms
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {isSuspended && myPlayer && (
         <p className="text-yellow-600 text-sm font-bold">
