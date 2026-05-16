@@ -520,7 +520,8 @@ export class QuizRoom extends Server<Env> {
   ): Promise<void> {
     const playerId = connection.state?.playerId;
     if (!playerId) return;
-    const { board } = await this.getBoardAndContext();
+    const { board, context } = await this.getBoardAndContext();
+    if (context.hostId !== playerId) return;
     const judgements: Record<PlayerId, "correct" | "incorrect"> = {};
     for (const ans of Object.values(board.answers)) {
       if (ans.judgement === "correct" || ans.judgement === "incorrect") {
