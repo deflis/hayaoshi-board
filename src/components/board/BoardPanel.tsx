@@ -98,7 +98,6 @@ export function BoardPanel({ state, myPlayerId, send }: Props) {
         </div>
       )}
 
-
       {board.status !== "closed" && (
         <div className="space-y-1">
           {board.status === "answering" && (
