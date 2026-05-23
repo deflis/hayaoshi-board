@@ -13,7 +13,7 @@
         "@tanstack/react-router-ssr-query": "^1.166.12",
         "@tanstack/react-start": "^1.167.65",
         "@tanstack/router-plugin": "^1.168.2",
-        "hono": "^4.12.18",
+        "hono": "^4.12.22",
         "hono-party": "^2.1.0",
         "lucide-react": "^0.545.0",
         "partyserver": "^0.5.5",
@@ -599,7 +599,7 @@
 
     "h3-v2": ["h3@2.0.1-rc.20", "", { "dependencies": { "rou3": "^0.8.1", "srvx": "^0.11.13" }, "peerDependencies": { "crossws": "^0.4.1" }, "optionalPeers": ["crossws"], "bin": { "h3": "bin/h3.mjs" } }, "sha512-28ljodXuUp0fZovdiSRq4G9OgrxCztrJe5VdYzXAB7ueRvI7pIUqLU14Xi3XqdYJ/khXjfpUOOD2EQa6CmBgsg=="],
 
-    "hono": ["hono@4.12.18", "", {}, "sha512-RWzP96k/yv0PQfyXnWjs6zot20TqfpfsNXhOnev8d1InAxubW93L11/oNUc3tQqn2G0bSdAOBpX+2uDFHV7kdQ=="],
+    "hono": ["hono@4.12.22", "", {}, "sha512-7fvVPbB92zNRsQke+uiRGwtTuef0tB2Dg4hWxYfFNvkQhIltWoyi0ONReM5LWA+jJWS3nfT5lTq+qbsIpX0IQw=="],
 
     "hono-party": ["hono-party@2.1.0", "", { "peerDependencies": { "@cloudflare/workers-types": "^4.20260424.1", "hono": "^4.6.17", "partyserver": ">=0.2.0 <1.0.0" } }, "sha512-kMeOhQRm8kSRD7shVP4Rru4rZgfzGuB2g0sOWBM4Un6J/0Yd6LqWto9PjnbBl9Zg0g+TVFsgxnJqZ7D72oA/0A=="],
 
